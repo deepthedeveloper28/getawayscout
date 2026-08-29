@@ -2758,80 +2758,102 @@ button, input, select, textarea {
 }
 
 /* ==============================================================================
-   SHOP & CATALOG MODERN PAGINATION
+   SHOP PAGINATION BAR STYLING
    ============================================================================== */
 .shop-pagination-container {
-  margin-top: 3.5rem;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  width: 100%;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1.25rem 2rem;
+  background: #ffffff;
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
 }
 
 .shop-pagination-info {
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.9rem;
   color: var(--color-slate-500);
+  font-weight: 500;
 }
 
-.shop-pagination-nav {
-  display: inline-flex;
+.shop-pagination-info span {
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.shop-pagination-controls {
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  background: #ffffff;
-  padding: 0.4rem 0.6rem;
-  border-radius: 9999px;
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
+  gap: 0.5rem;
   flex-wrap: wrap;
-  justify-content: center;
 }
 
-.pagination-btn {
+.shop-page-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 38px;
-  height: 38px;
+  gap: 0.35rem;
+  min-width: 40px;
+  height: 40px;
   padding: 0 0.85rem;
-  border-radius: 9999px;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--color-navy);
-  background: transparent;
-  border: 1px solid transparent;
+  background: var(--color-slate-50);
+  border: 1px solid var(--color-border);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   user-select: none;
-  gap: 0.35rem;
 }
 
-.pagination-btn:hover:not(:disabled):not(.active) {
-  background: rgba(230, 145, 26, 0.12);
+.shop-page-btn:hover:not(:disabled):not(.active) {
+  background: #ffffff;
+  border-color: var(--color-primary);
   color: var(--color-primary);
-  border-color: rgba(230, 145, 26, 0.25);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(230, 145, 26, 0.15);
 }
 
-.pagination-btn.active {
-  background: linear-gradient(135deg, #e6911a 0%, #d97706 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(230, 145, 26, 0.35);
-  border-color: transparent;
+.shop-page-btn.active {
+  background: linear-gradient(135deg, #141c2e 0%, #1e293b 100%);
+  color: #f59e0b;
+  border-color: rgba(230, 145, 26, 0.4);
+  box-shadow: 0 4px 14px rgba(20, 28, 46, 0.2);
   cursor: default;
 }
 
-.pagination-btn:disabled {
-  opacity: 0.35;
+.shop-page-btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
-  transform: none;
+  background: var(--color-slate-100);
+  border-color: var(--color-border);
 }
 
-.pagination-ellipsis {
-  padding: 0 0.4rem;
-  font-weight: 700;
+.shop-page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 40px;
   color: var(--color-slate-400);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+  .shop-pagination-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+  }
+  .shop-pagination-controls {
+    justify-content: center;
+  }
 }
 
 
