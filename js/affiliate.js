@@ -21,9 +21,9 @@ const affiliateConfig = {
   // GENERAL SITE BRANDING & CONTACT INFO
   // ==========================================
   siteName: "Getawayscout.com",
-  contactEmail: "Christian.reu1998@gmx.at",
-  newsletterEmail: "Christian.reu1998@gmx.at",
-  newsletterAction: "https://formsubmit.co/Christian.reu1998@gmx.at",
+  contactEmail: "support@getawayscout.com",
+  newsletterEmail: "support@getawayscout.com",
+  newsletterAction: "https://formsubmit.co/support@getawayscout.com",
   socialLinks: {
     facebook: "https://facebook.com",
     instagram: "https://instagram.com",

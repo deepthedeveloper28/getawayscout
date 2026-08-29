@@ -35,7 +35,7 @@ Open `js/affiliate.js` in any text editor. You can update:
 2. **Hotel Widgets & Destination URLs**: Replace search widgets or Expedia affiliate URLs.
 3. **Car, Cab, Bike Widgets**: Update embed scripts with your affiliate marker (`shmarker=...`).
 4. **Tours & Activities**: Paste your GetYourGuide, Tiqets, or Viator embed widget code or link.
-5. **Contact & Social Info**: Edit contact email (`Christian.reu1998@gmx.at`) and social links.
+5. **Contact & Social Info**: Edit contact email (`support@getawayscout.com`) and social links.
 
 ---
 

@@ -524,7 +524,7 @@ function injectPageWidgets() {
 function setupContactForm() {
   const contactForm = document.getElementById("contactForm");
   if (contactForm) {
-    const targetEmail = (window.affiliateConfig && window.affiliateConfig.newsletterEmail) || "Christian.reu1998@gmx.at";
+    const targetEmail = (window.affiliateConfig && window.affiliateConfig.newsletterEmail) || "support@getawayscout.com";
     contactForm.action = `https://formsubmit.co/${targetEmail}`;
     contactForm.method = "POST";
     const currentPath = window.location.pathname;
@@ -544,7 +544,7 @@ function setupContactForm() {
  */
 function setupNewsletterForms() {
   const forms = document.querySelectorAll(".newsletter-form");
-  const targetEmail = (window.affiliateConfig && window.affiliateConfig.newsletterEmail) || "Christian.reu1998@gmx.at";
+  const targetEmail = (window.affiliateConfig && window.affiliateConfig.newsletterEmail) || "support@getawayscout.com";
   const formAction = (window.affiliateConfig && window.affiliateConfig.newsletterAction) || `https://formsubmit.co/${targetEmail}`;
   
   // Calculate absolute URL for thank-you.html so FormSubmit can safely redirect
