@@ -269,7 +269,8 @@ const affiliateConfig = {
     Prague: "https://www.getyourguide.com/prague-l10/?partner_id=CUNP4U8&utm_medium=online_publisher&cmp=Home_prague",
     Santorini: "https://www.getyourguide.com/santorini-l753/?partner_id=CUNP4U8&utm_medium=online_publisher&cmp=Home_santorini",
     Istanbul: "https://www.getyourguide.com/istanbul-l56/?partner_id=CUNP4U8&utm_medium=online_publisher&cmp=Home_instanbul"
-  }
+  },
+  viewAllDestinationsLink: "https://www.getyourguide.com/en-gb/austria-l169004/?partner_id=CUNP4U8&utm_medium=online_publisher&cmp=home_austria"
 };
 
 // Export to window object for vanilla browser usage

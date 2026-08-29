@@ -166,10 +166,13 @@ function applySiteBranding() {
       });
 
       const viewAllDestLink = document.querySelector('.bento-view-all-link');
-      if (viewAllDestLink && (affiliateConfig.toursMainLink || affiliateConfig.toursBookMoreLink)) {
-        viewAllDestLink.href = affiliateConfig.toursMainLink || affiliateConfig.toursBookMoreLink;
-        viewAllDestLink.target = '_blank';
-        viewAllDestLink.rel = 'noopener noreferrer';
+      if (viewAllDestLink) {
+        const targetUrl = affiliateConfig.viewAllDestinationsLink || affiliateConfig.toursMainLink || affiliateConfig.toursBookMoreLink;
+        if (targetUrl) {
+          viewAllDestLink.href = targetUrl;
+          viewAllDestLink.target = '_blank';
+          viewAllDestLink.rel = 'noopener noreferrer';
+        }
       }
     }
   }
