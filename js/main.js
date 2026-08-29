@@ -28,12 +28,14 @@ document.addEventListener("DOMContentLoaded", function () {
   injectPageWidgets();
   initExpediaWidgets();
 
-  // 5. Background Prefetch WordPress data for 0ms instant transitions
-  if (typeof VoyageurWP !== 'undefined' && typeof VoyageurWP.fetchPosts === 'function') {
+  // 5. Background Prefetch WordPress & WooCommerce data for 0ms instant transitions
+  if (typeof VoyageurWP !== 'undefined') {
     setTimeout(() => {
-      VoyageurWP.fetchPosts();
-      VoyageurWP.fetchCategories();
-    }, 200);
+      if (typeof VoyageurWP.fetchPosts === 'function') VoyageurWP.fetchPosts();
+      if (typeof VoyageurWP.fetchCategories === 'function') VoyageurWP.fetchCategories();
+      if (typeof VoyageurWP.fetchProducts === 'function') VoyageurWP.fetchProducts();
+      if (typeof VoyageurWP.fetchProductCategories === 'function') VoyageurWP.fetchProductCategories();
+    }, 250);
   }
 });
 

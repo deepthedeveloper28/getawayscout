@@ -190,7 +190,6 @@
 
         <!-- Skeleton Preview Cards -->
         <div class="shop-skeleton-grid">
-          <!-- Skeleton Card 1 -->
           <div class="skeleton-card">
             <div class="skeleton-img"><div class="skeleton-shimmer"></div></div>
             <div class="skeleton-line w-35"><div class="skeleton-shimmer"></div></div>
@@ -201,7 +200,6 @@
               <div class="skeleton-btn"><div class="skeleton-shimmer"></div></div>
             </div>
           </div>
-          <!-- Skeleton Card 2 -->
           <div class="skeleton-card">
             <div class="skeleton-img"><div class="skeleton-shimmer"></div></div>
             <div class="skeleton-line w-35"><div class="skeleton-shimmer"></div></div>
@@ -212,7 +210,6 @@
               <div class="skeleton-btn"><div class="skeleton-shimmer"></div></div>
             </div>
           </div>
-          <!-- Skeleton Card 3 -->
           <div class="skeleton-card">
             <div class="skeleton-img"><div class="skeleton-shimmer"></div></div>
             <div class="skeleton-line w-35"><div class="skeleton-shimmer"></div></div>
@@ -223,7 +220,6 @@
               <div class="skeleton-btn"><div class="skeleton-shimmer"></div></div>
             </div>
           </div>
-          <!-- Skeleton Card 4 -->
           <div class="skeleton-card">
             <div class="skeleton-img"><div class="skeleton-shimmer"></div></div>
             <div class="skeleton-line w-35"><div class="skeleton-shimmer"></div></div>
@@ -351,8 +347,9 @@
     let currentShopCategory = 'all';
     let currentShopSearch = '';
     let currentShopPage = 1;
+    let masterProducts = [];
+    let masterCategories = [];
     let allCurrentProducts = [];
-    let allCurrentCats = [];
 
     const tickerMessages = [
       "Syncing boutique travel collection...",
@@ -377,8 +374,8 @@
           el.textContent = tickerMessages[tickerIndex];
           el.style.opacity = '1';
           el.style.transform = 'translateY(0)';
-        }, 200);
-      }, 1200);
+        }, 150);
+      }, 1000);
     }
 
     function stopTicker() {
@@ -462,7 +459,12 @@
 
     function renderCurrentPage() {
       const grid = document.getElementById('productsGrid');
+      const loading = document.getElementById('shopLoadingState');
       if (!grid) return;
+
+      stopTicker();
+      if (loading) loading.style.display = 'none';
+      grid.style.display = 'grid';
 
       const totalProducts = allCurrentProducts.length;
       const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE) || 1;
@@ -483,12 +485,17 @@
       const startIndex = (currentShopPage - 1) * PRODUCTS_PER_PAGE;
       const pageProducts = allCurrentProducts.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
 
-      grid.innerHTML = pageProducts.map(p => `
-        <div style="background: #fff; border-radius: 1.25rem; overflow: hidden; border: 1px solid var(--color-border); box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between;">
+      grid.innerHTML = pageProducts.map((p, idx) => `
+        <div style="background: #fff; border-radius: 1.25rem; overflow: hidden; border: 1px solid var(--color-border); box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s ease, box-shadow 0.2s ease;">
           <div>
             <div style="position: relative; height: 190px; background: rgba(251, 249, 246, 0.6); padding: 1rem; display: flex; align-items: center; justify-content: center;">
               <a href="product-single.html?slug=${p.slug}" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-                <img src="${p.image?.sourceUrl || 'https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?auto=format&fit=crop&w=800&q=80'}" onerror="this.src='https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?auto=format&fit=crop&w=800&q=80'" alt="${p.name}" style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 0.75rem;" />
+                <img src="${p.image?.sourceUrl || 'https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?auto=format&fit=crop&w=800&q=80'}" 
+                     onerror="this.src='https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?auto=format&fit=crop&w=800&q=80'" 
+                     alt="${p.name}" 
+                     loading="${idx < 4 ? 'eager' : 'lazy'}" 
+                     decoding="async"
+                     style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 0.75rem;" />
               </a>
               ${p.onSale ? '<span style="position: absolute; top: 0.75rem; left: 0.75rem; background: #ef4444; color: #fff; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">SALE</span>' : ''}
             </div>
@@ -510,7 +517,7 @@
 
           <div style="padding: 0.75rem 1rem; border-top: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between;">
             <span style="font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--color-navy);">
-              ${p.price || '$299.00'}
+              ${p.price || '$249.00'}
             </span>
             <a href="product-single.html?slug=${p.slug}" class="btn-primary-action" style="padding: 0.35rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700;">
               Details &rarr;
@@ -533,79 +540,146 @@
       }
     }
 
-    function renderShopView(catsRes, products) {
-      const loading = document.getElementById('shopLoadingState');
-      const grid = document.getElementById('productsGrid');
-      const pCatsContainer = document.getElementById('productCategoriesContainer');
+    // Instant local filtering (0ms latency)
+    function applyLocalFilter() {
+      if (!masterProducts || masterProducts.length === 0) return;
 
-      stopTicker();
-      if (loading) loading.style.display = 'none';
-      if (grid) grid.style.display = 'grid';
+      let filtered = masterProducts;
 
-      allCurrentProducts = Array.isArray(products) ? products : [];
-      allCurrentCats = Array.isArray(catsRes) ? catsRes : [];
-
-      if (pCatsContainer && allCurrentCats.length > 0) {
-        pCatsContainer.innerHTML = allCurrentCats.map(cat => `
-          <button class="blog-category-pill ${currentShopCategory === cat.slug ? 'active' : ''}" data-pcat="${cat.slug}">
-            ${cat.name} ${cat.count ? `<span style="font-size: 10px; background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 10px;">${cat.count}</span>` : ''}
-          </button>
-        `).join('');
-
-        document.querySelectorAll('[data-pcat]').forEach(btn => {
-          btn.onclick = () => {
-            currentShopCategory = btn.getAttribute('data-pcat');
-            currentShopPage = 1;
-            loadShop();
-          };
-        });
+      if (currentShopCategory && currentShopCategory !== 'all') {
+        filtered = filtered.filter(p => p.productCategories?.nodes?.some(c => c.slug === currentShopCategory));
       }
 
+      if (currentShopSearch && currentShopSearch.trim()) {
+        const query = currentShopSearch.trim().toLowerCase();
+        filtered = filtered.filter(p => 
+          (p.name && p.name.toLowerCase().includes(query)) || 
+          (p.shortDescription && p.shortDescription.toLowerCase().includes(query)) ||
+          (p.description && p.description.toLowerCase().includes(query))
+        );
+      }
+
+      allCurrentProducts = filtered;
       renderCurrentPage();
     }
 
-    async function loadShop() {
+    function renderCategoryButtons(cats) {
+      const pCatsContainer = document.getElementById('productCategoriesContainer');
+      if (!pCatsContainer || !Array.isArray(cats) || cats.length === 0) return;
+      
+      masterCategories = cats;
+      pCatsContainer.innerHTML = cats.map(cat => `
+        <button class="blog-category-pill ${currentShopCategory === cat.slug ? 'active' : ''}" data-pcat="${cat.slug}">
+          ${cat.name} ${cat.count ? `<span style="font-size: 10px; background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 10px;">${cat.count}</span>` : ''}
+        </button>
+      `).join('');
+
+      pCatsContainer.querySelectorAll('[data-pcat]').forEach(btn => {
+        btn.onclick = () => {
+          pCatsContainer.querySelectorAll('[data-pcat]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentShopCategory = btn.getAttribute('data-pcat');
+          currentShopPage = 1;
+          applyLocalFilter();
+        };
+      });
+    }
+
+    // Lightning Fast Fast-Path: Instant Synchronous Hydration from Local Storage
+    function hydrateFromCacheSync() {
+      try {
+        const cachedCatsRaw = localStorage.getItem('voyageur_cache_product_categories_all');
+        const cachedProdsRaw = localStorage.getItem('voyageur_cache_products_all_');
+
+        if (cachedCatsRaw) {
+          const parsedCats = JSON.parse(cachedCatsRaw);
+          if (parsedCats && Array.isArray(parsedCats.data)) {
+            renderCategoryButtons(parsedCats.data);
+          }
+        }
+
+        if (cachedProdsRaw) {
+          const parsedProds = JSON.parse(cachedProdsRaw);
+          if (parsedProds && parsedProds.data && Array.isArray(parsedProds.data.products) && parsedProds.data.products.length > 0) {
+            masterProducts = parsedProds.data.products;
+            applyLocalFilter();
+            return true;
+          }
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    async function loadShop(forceRefresh = false) {
       const loading = document.getElementById('shopLoadingState');
       const grid = document.getElementById('productsGrid');
-      const paginationWrapper = document.getElementById('shopPaginationWrapper');
-      
-      if (loading) loading.style.display = 'block';
-      if (grid) grid.style.display = 'none';
-      if (paginationWrapper) paginationWrapper.style.display = 'none';
-      
-      startTicker();
-      if (window.lucide) window.lucide.createIcons();
+
+      // If we don't have products displayed yet, show animated radar loader
+      if (!masterProducts || masterProducts.length === 0 || forceRefresh) {
+        if (loading) loading.style.display = 'block';
+        if (grid) grid.style.display = 'none';
+        startTicker();
+        if (window.lucide) window.lucide.createIcons();
+      }
 
       try {
-        const cachedCats = VoyageurWP.fetchProductCategories();
-        const cachedProds = VoyageurWP.fetchProducts({ category: currentShopCategory, search: currentShopSearch });
-        
-        const [catsRes, prodsRes] = await Promise.all([cachedCats, cachedProds]);
-        if (prodsRes && prodsRes.products) {
-          renderShopView(catsRes, prodsRes.products);
+        const [catsRes, prodsRes] = await Promise.all([
+          VoyageurWP.fetchProductCategories(),
+          VoyageurWP.fetchProducts({ category: 'all' })
+        ]);
+
+        if (catsRes && Array.isArray(catsRes)) {
+          renderCategoryButtons(catsRes);
+        }
+
+        if (prodsRes && Array.isArray(prodsRes.products) && prodsRes.products.length > 0) {
+          masterProducts = prodsRes.products;
+          applyLocalFilter();
         }
       } catch (err) {
-        console.error(err);
+        console.error('Shop loading error:', err);
+      } finally {
+        stopTicker();
+        if (loading) loading.style.display = 'none';
+        if (grid) grid.style.display = 'grid';
       }
+    }
+
+    // Search input (instant dynamic + form submit)
+    const searchInput = document.getElementById('shopSearchInput');
+    if (searchInput) {
+      let searchTimeout = null;
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          currentShopSearch = e.target.value;
+          currentShopPage = 1;
+          applyLocalFilter();
+        }, 120); // 120ms debounce for lightning fast search as you type
+      });
     }
 
     document.getElementById('shopSearchForm').onsubmit = (e) => {
       e.preventDefault();
       currentShopSearch = document.getElementById('shopSearchInput').value;
       currentShopPage = 1;
-      loadShop();
+      applyLocalFilter();
     };
 
     document.getElementById('refreshShopBtn').onclick = () => {
       currentShopPage = 1;
-      loadShop();
+      loadShop(true);
     };
 
-    // Init page reliably (handles already fired DOMContentLoaded)
+    // Instant Boot sequence:
+    // 1. Synchronous Cache Render (0ms!)
+    hydrateFromCacheSync();
+
+    // 2. Background Revalidation / Live Fetch
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', loadShop);
+      document.addEventListener('DOMContentLoaded', () => loadShop(false));
     } else {
-      loadShop();
+      loadShop(false);
     }
   </script>
 </body>

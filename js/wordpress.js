@@ -432,9 +432,98 @@ window.VoyageurWP = {
   async fetchProducts(params = {}) {
     const cacheKey = `products_${params.category || 'all'}_${params.search || ''}`;
     const cached = getCachedData(cacheKey);
-    if (cached && cached.isLive) return cached;
 
-    // 1. Live WordPress REST fetch from getawayscout.com (/wp-json/wp/v2/product)
+    // 1. Instant Cache Return (0ms)
+    if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
+      // Background revalidate if older than 5 minutes
+      const mem = cacheStore.get(cacheKey);
+      if (!mem || (Date.now() - mem.timestamp > 5 * 60 * 1000)) {
+        setTimeout(() => this._fetchFreshProducts(params, cacheKey), 50);
+      }
+      return cached;
+    }
+
+    return await this._fetchFreshProducts(params, cacheKey);
+  },
+
+  async _fetchFreshProducts(params = {}, cacheKey) {
+    try {
+      const baseUrl = getSiteBaseUrl();
+      
+      // 1. Try ultra-fast WooCommerce Store API first
+      let storeUrl = `${baseUrl}/wp-json/wc/store/v1/products?per_page=100`;
+      if (params.search && params.search.trim()) {
+        storeUrl += `&search=${encodeURIComponent(params.search.trim())}`;
+      }
+
+      const storeRes = await fetchWithTimeout(storeUrl, { cache: 'default' }, 3500);
+      if (storeRes.ok) {
+        const items = await storeRes.json();
+        if (Array.isArray(items) && items.length > 0) {
+          const mapped = items.map((item, index) => {
+            const media = item.images?.[0]?.src || 
+                          item.images?.[0]?.thumbnail || 
+                          'https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?auto=format&fit=crop&w=800&q=80';
+            
+            const gallery = (item.images || []).map(img => ({ sourceUrl: img.src }));
+            const title = decodeHtmlEntities(item.name || item.slug);
+            const content = item.description || '';
+            const excerpt = item.short_description || content;
+            
+            let priceFormatted = '$249.00';
+            let regPriceFormatted = '$299.00';
+            if (item.prices?.price && parseInt(item.prices.price, 10) > 0) {
+              const decimals = item.prices.currency_minor_unit || 2;
+              const val = (parseInt(item.prices.price, 10) / Math.pow(10, decimals)).toFixed(decimals);
+              priceFormatted = `${item.prices.currency_prefix || '$'}${val}`;
+            } else {
+              const baseVal = 79 + (index * 25) % 200;
+              priceFormatted = `$${baseVal}.00`;
+              regPriceFormatted = `$${baseVal + 40}.00`;
+            }
+
+            const cats = (item.categories || []).map(c => ({ id: String(c.id), name: decodeHtmlEntities(c.name), slug: c.slug }));
+
+            const prodObj = sanitizeProduct({
+              id: String(item.id),
+              databaseId: item.id,
+              name: title,
+              slug: item.slug,
+              description: content,
+              shortDescription: excerpt,
+              price: priceFormatted,
+              regularPrice: regPriceFormatted,
+              onSale: item.on_sale || (index % 3 === 0),
+              sku: item.sku || `GETAWAY-${item.id}`,
+              averageRating: parseFloat(item.average_rating) || 4.9,
+              reviewCount: parseInt(item.review_count, 10) || (12 + (index * 2)),
+              image: { sourceUrl: media, altText: title },
+              galleryImages: { nodes: gallery.length > 0 ? gallery : [{ sourceUrl: media }] },
+              productCategories: { nodes: cats.length > 0 ? cats : [{ id: 'pcat-1', name: "Travel Gear", slug: 'gear' }] }
+            });
+
+            if (prodObj.slug) {
+              setCachedData(`product_${prodObj.slug}`, { product: prodObj, isLive: true });
+            }
+
+            return prodObj;
+          });
+
+          let filtered = mapped;
+          if (params.category && params.category !== 'all') {
+            filtered = filtered.filter(p => p.productCategories?.nodes?.some(c => c.slug === params.category));
+          }
+          const result = { products: filtered, isLive: true };
+          setCachedData(cacheKey, result);
+          setCachedData('products_all_', { products: mapped, isLive: true });
+          return result;
+        }
+      }
+    } catch (err) {
+      console.warn('[WP Store API Products] Fallback to REST:', err.message);
+    }
+
+    // 2. Fallback to standard WP REST API
     try {
       const baseUrl = getSiteBaseUrl();
       let url = `${baseUrl}/wp-json/wp/v2/product?_embed=1&per_page=100`;
@@ -442,14 +531,14 @@ window.VoyageurWP = {
         url += `&search=${encodeURIComponent(params.search.trim())}`;
       }
 
-      const restRes = await fetchWithTimeout(url, { cache: 'default' }, 5000);
+      const restRes = await fetchWithTimeout(url, { cache: 'default' }, 3500);
       if (restRes.ok) {
         const items = await restRes.json();
         if (Array.isArray(items) && items.length > 0) {
           const mapped = items.map((item, index) => {
             const media = item._embedded?.['wp:featuredmedia']?.[0]?.source_url || 
                           'https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?auto=format&fit=crop&w=800&q=80';
-            const title = item.title?.rendered || item.slug;
+            const title = decodeHtmlEntities(item.title?.rendered || item.slug);
             const content = item.content?.rendered || '';
             const excerpt = item.excerpt?.rendered || content;
             const basePrice = 120 + (index * 45) % 350;
@@ -459,7 +548,7 @@ window.VoyageurWP = {
             if (Array.isArray(terms)) {
               terms.flat().forEach(t => {
                 if (t?.taxonomy === 'product_cat') {
-                  cats.push({ id: String(t.id), name: t.name, slug: t.slug });
+                  cats.push({ id: String(t.id), name: decodeHtmlEntities(t.name), slug: t.slug });
                 }
               });
             }
@@ -500,10 +589,10 @@ window.VoyageurWP = {
       console.warn('[WP REST Products] Error:', err.message);
     }
 
-    // Static fallback
+    // 3. Static fallback
     let filtered = [...FALLBACK_PRODUCTS];
     if (params.category && params.category !== 'all') {
-      filtered = filtered.filter(p => p.productCategories?.nodes.some(c => c.slug === params.category));
+      filtered = filtered.filter(p => p.productCategories?.nodes?.some(c => c.slug === params.category));
     }
     if (params.search && params.search.trim()) {
       const s = params.search.toLowerCase();
@@ -517,27 +606,31 @@ window.VoyageurWP = {
     const cached = getCachedData(cacheKey);
     if (cached && cached.isLive) return cached;
 
-    // Fast REST fetch
+    // Fast Store API by slug
+    try {
+      const allCached = getCachedData('products_all_');
+      if (allCached && Array.isArray(allCached.products)) {
+        const found = allCached.products.find(p => p.slug === slug || String(p.databaseId) === slug);
+        if (found) {
+          const result = { product: found, isLive: true };
+          setCachedData(cacheKey, result);
+          return result;
+        }
+      }
+    } catch (e) {}
+
+    // REST fetch
     try {
       const baseUrl = getSiteBaseUrl();
-      const restRes = await fetchWithTimeout(`${baseUrl}/wp-json/wp/v2/product?slug=${encodeURIComponent(slug)}&_embed=1`, { cache: 'default' }, 3500);
+      const restRes = await fetchWithTimeout(`${baseUrl}/wp-json/wc/store/v1/products?slug=${encodeURIComponent(slug)}`, { cache: 'default' }, 3500);
       if (restRes.ok) {
         const items = await restRes.json();
         if (Array.isArray(items) && items.length > 0) {
           const item = items[0];
-          const media = item._embedded?.['wp:featuredmedia']?.[0]?.source_url || 
-                        'https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?auto=format&fit=crop&w=800&q=80';
-          const title = item.title?.rendered || item.slug;
-
-          const terms = item._embedded?.['wp:term'] || [];
-          const cats = [];
-          if (Array.isArray(terms)) {
-            terms.flat().forEach(t => {
-              if (t?.taxonomy === 'product_cat') {
-                cats.push({ id: String(t.id), name: t.name, slug: t.slug });
-              }
-            });
-          }
+          const media = item.images?.[0]?.src || 'https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?auto=format&fit=crop&w=800&q=80';
+          const gallery = (item.images || []).map(img => ({ sourceUrl: img.src }));
+          const title = decodeHtmlEntities(item.name || item.slug);
+          const cats = (item.categories || []).map(c => ({ id: String(c.id), name: decodeHtmlEntities(c.name), slug: c.slug }));
 
           const result = {
             product: sanitizeProduct({
@@ -545,24 +638,24 @@ window.VoyageurWP = {
               databaseId: item.id,
               name: title,
               slug: item.slug,
-              description: item.content?.rendered || '',
-              shortDescription: item.excerpt?.rendered || item.content?.rendered || '',
+              description: item.description || '',
+              shortDescription: item.short_description || item.description || '',
               price: '$249.00',
               regularPrice: '$299.00',
               onSale: true,
-              sku: `GETAWAY-${item.id}`,
+              sku: item.sku || `GETAWAY-${item.id}`,
               averageRating: 4.9,
               reviewCount: 16,
               image: { sourceUrl: media, altText: title },
-              galleryImages: { nodes: [{ sourceUrl: media }] },
+              galleryImages: { nodes: gallery.length > 0 ? gallery : [{ sourceUrl: media }] },
               productCategories: { nodes: cats.length > 0 ? cats : [{ id: 'pcat-1', name: "Travel Gear", slug: 'gear' }] },
               reviews: {
                 nodes: [
                   {
                     id: `rev-${item.id}`,
-                    content: 'Delivered directly from Getaway Scout catalogue.',
+                    content: 'Delivered directly from Getaway Scout boutique collection.',
                     rating: 5,
-                    date: item.date || new Date().toISOString(),
+                    date: new Date().toISOString(),
                     author: { node: { name: 'Verified Buyer' } }
                   }
                 ]
@@ -585,15 +678,15 @@ window.VoyageurWP = {
     const cached = getCachedData(cacheKey);
     if (cached && Array.isArray(cached) && cached.length > 0) return cached;
 
-    // Fast REST product_cat
+    // Fast Store API categories
     try {
       const baseUrl = getSiteBaseUrl();
-      const restRes = await fetchWithTimeout(`${baseUrl}/wp-json/wp/v2/product_cat?per_page=50`, { cache: 'default' }, 3500);
+      const restRes = await fetchWithTimeout(`${baseUrl}/wp-json/wc/store/v1/products/categories?per_page=50`, { cache: 'default' }, 3500);
       if (restRes.ok) {
         const items = await restRes.json();
         if (Array.isArray(items) && items.length > 0) {
           const total = items.reduce((a, c) => a + (c.count || 0), 0);
-          const cats = items.map(c => ({ id: String(c.id), name: c.name, slug: c.slug, count: c.count || 0 }));
+          const cats = items.map(c => ({ id: String(c.id), name: decodeHtmlEntities(c.name), slug: c.slug, count: c.count || 0 }));
           const result = [{ id: 'all', name: 'All Travel Gear', slug: 'all', count: total }, ...cats];
           setCachedData(cacheKey, result);
           return result;
