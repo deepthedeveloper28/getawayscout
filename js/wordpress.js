@@ -437,7 +437,7 @@ window.VoyageurWP = {
     // 1. Live WordPress REST fetch from getawayscout.com (/wp-json/wp/v2/product)
     try {
       const baseUrl = getSiteBaseUrl();
-      let url = `${baseUrl}/wp-json/wp/v2/product?_embed=1&per_page=30`;
+      let url = `${baseUrl}/wp-json/wp/v2/product?_embed=1&per_page=100`;
       if (params.search && params.search.trim()) {
         url += `&search=${encodeURIComponent(params.search.trim())}`;
       }
