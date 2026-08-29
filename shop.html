@@ -563,6 +563,25 @@
       renderCurrentPage();
     }
 
+    function extractCategoriesFromProducts(products) {
+      if (!Array.isArray(products) || products.length === 0) return [];
+      const catMap = new Map();
+      products.forEach(p => {
+        (p.productCategories?.nodes || []).forEach(c => {
+          if (c && c.slug && c.slug !== 'all') {
+            if (!catMap.has(c.slug)) {
+              catMap.set(c.slug, { id: c.id || c.slug, name: c.name, slug: c.slug, count: 0 });
+            }
+            catMap.get(c.slug).count++;
+          }
+        });
+      });
+      return [
+        { id: 'all', name: 'All Travel Gear', slug: 'all', count: products.length },
+        ...Array.from(catMap.values())
+      ];
+    }
+
     function renderCategoryButtons(cats) {
       const pCatsContainer = document.getElementById('productCategoriesContainer');
       if (!pCatsContainer || !Array.isArray(cats) || cats.length === 0) return;
@@ -570,7 +589,7 @@
       masterCategories = cats;
       pCatsContainer.innerHTML = cats.map(cat => `
         <button class="blog-category-pill ${currentShopCategory === cat.slug ? 'active' : ''}" data-pcat="${cat.slug}">
-          ${cat.name} ${cat.count ? `<span style="font-size: 10px; background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 10px;">${cat.count}</span>` : ''}
+          ${cat.name} ${cat.count !== undefined ? `<span style="font-size: 10px; background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 10px;">${cat.count}</span>` : ''}
         </button>
       `).join('');
 
@@ -593,7 +612,7 @@
 
         if (cachedCatsRaw) {
           const parsedCats = JSON.parse(cachedCatsRaw);
-          if (parsedCats && Array.isArray(parsedCats.data)) {
+          if (parsedCats && Array.isArray(parsedCats.data) && parsedCats.data.length > 1) {
             renderCategoryButtons(parsedCats.data);
           }
         }
@@ -602,6 +621,9 @@
           const parsedProds = JSON.parse(cachedProdsRaw);
           if (parsedProds && parsedProds.data && Array.isArray(parsedProds.data.products) && parsedProds.data.products.length > 0) {
             masterProducts = parsedProds.data.products;
+            if (!masterCategories || masterCategories.length <= 1) {
+              renderCategoryButtons(extractCategoriesFromProducts(masterProducts));
+            }
             applyLocalFilter();
             return true;
           }
@@ -628,13 +650,15 @@
           VoyageurWP.fetchProducts({ category: 'all' })
         ]);
 
-        if (catsRes && Array.isArray(catsRes)) {
-          renderCategoryButtons(catsRes);
-        }
-
         if (prodsRes && Array.isArray(prodsRes.products) && prodsRes.products.length > 0) {
           masterProducts = prodsRes.products;
           applyLocalFilter();
+        }
+
+        if (catsRes && Array.isArray(catsRes) && catsRes.length > 1) {
+          renderCategoryButtons(catsRes);
+        } else if (masterProducts && masterProducts.length > 0) {
+          renderCategoryButtons(extractCategoriesFromProducts(masterProducts));
         }
       } catch (err) {
         console.error('Shop loading error:', err);

@@ -676,9 +676,9 @@ window.VoyageurWP = {
   async fetchProductCategories() {
     const cacheKey = 'product_categories_all';
     const cached = getCachedData(cacheKey);
-    if (cached && Array.isArray(cached) && cached.length > 0) return cached;
+    if (cached && Array.isArray(cached) && cached.length > 1) return cached;
 
-    // Fast Store API categories
+    // 1. Fast Store API categories
     try {
       const baseUrl = getSiteBaseUrl();
       const restRes = await fetchWithTimeout(`${baseUrl}/wp-json/wc/store/v1/products/categories?per_page=50`, { cache: 'default' }, 3500);
@@ -694,7 +694,53 @@ window.VoyageurWP = {
       }
     } catch (e) {}
 
-    return FALLBACK_PRODUCT_CATEGORIES;
+    // 2. Standard WP REST product_cat fallback
+    try {
+      const baseUrl = getSiteBaseUrl();
+      const restRes = await fetchWithTimeout(`${baseUrl}/wp-json/wp/v2/product_cat?per_page=50`, { cache: 'default' }, 3500);
+      if (restRes.ok) {
+        const items = await restRes.json();
+        if (Array.isArray(items) && items.length > 0) {
+          const total = items.reduce((a, c) => a + (c.count || 0), 0);
+          const cats = items.map(c => ({ id: String(c.id), name: decodeHtmlEntities(c.name), slug: c.slug, count: c.count || 0 }));
+          const result = [{ id: 'all', name: 'All Travel Gear', slug: 'all', count: total }, ...cats];
+          setCachedData(cacheKey, result);
+          return result;
+        }
+      }
+    } catch (e) {}
+
+    // 3. Derive from cached products array if available
+    try {
+      const prodsCached = getCachedData('products_all_');
+      if (prodsCached && Array.isArray(prodsCached.products) && prodsCached.products.length > 0) {
+        const catMap = new Map();
+        prodsCached.products.forEach(p => {
+          (p.productCategories?.nodes || []).forEach(c => {
+            if (c.slug && c.slug !== 'all') {
+              if (!catMap.has(c.slug)) {
+                catMap.set(c.slug, { id: c.id || c.slug, name: c.name, slug: c.slug, count: 0 });
+              }
+              catMap.get(c.slug).count++;
+            }
+          });
+        });
+        if (catMap.size > 0) {
+          const result = [{ id: 'all', name: 'All Travel Gear', slug: 'all', count: prodsCached.products.length }, ...Array.from(catMap.values())];
+          setCachedData(cacheKey, result);
+          return result;
+        }
+      }
+    } catch (e) {}
+
+    return [
+      { id: 'all', name: 'All Travel Gear', slug: 'all', count: 36 },
+      { id: '16', name: 'Backpack', slug: 'backpack', count: 8 },
+      { id: '18', name: 'Passport Holder', slug: 'passport-holder', count: 7 },
+      { id: '20', name: 'Travel Accessories', slug: 'travel-accessories', count: 7 },
+      { id: '17', name: 'Travel Bags', slug: 'travel-bags', count: 7 },
+      { id: '19', name: 'Travel Electronics', slug: 'travel-electronics', count: 7 }
+    ];
   },
 
   renderEndpointModal() {}
