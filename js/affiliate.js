@@ -100,7 +100,7 @@ const affiliateConfig = {
   // ==========================================
   toursSearchWidget: `<div data-gyg-href="https://widget.getyourguide.com/default/activities.frame" data-gyg-locale-code="en-US" data-gyg-widget="activities" data-gyg-number-of-items="30" data-gyg-partner-id="CUNP4U8" data-gyg-q="Austria"><span>Powered by <a target="_blank" rel="sponsored" href="https://www.getyourguide.com/austria-l169004/">GetYourGuide</a></span></div>
 <script async defer src="https://widget.getyourguide.com/dist/pa.umd.production.min.js" data-gyg-partner-id="CUNP4U8"></script>`,
-  toursMainLink: "https://www.getyourguide.com/austria-l169004/",
+  toursMainLink: "https://www.getyourguide.com/?cmp=brand&campaign_id=6656899609&adgroup_id=78792541373&target_id=kwd-297342945529&loc_physical_ms=9179407&match_type=e&ad_id=508913319731&keyword=get%20your%20guide&ad_position=&feed_item_id=&placement=&device=c&partner_id=CD951&gad_source=1&gad_campaignid=6656899609&gbraid=0AAAAADmzJCNe4KCbJLyM1nuDMRRMX4ILg&gclid=EAIaIQobChMI5ZOpv7rHlgMVXZJmAh2TEQLqEAAYASAAEgLaDPD_BwE&partner_id=CUNP4U8&utm_medium=online_publisher&cmp=tour_getyourguide",
   toursBookMoreLink: "https://www.getyourguide.com/?cmp=brand&campaign_id=6656899609&adgroup_id=78792541373&target_id=kwd-297342945529&loc_physical_ms=9179407&match_type=e&ad_id=508913319731&keyword=get%20your%20guide&ad_position=&feed_item_id=&placement=&device=c&partner_id=CD951&gad_source=1&gad_campaignid=6656899609&gbraid=0AAAAADmzJCNe4KCbJLyM1nuDMRRMX4ILg&gclid=EAIaIQobChMI5ZOpv7rHlgMVXZJmAh2TEQLqEAAYASAAEgLaDPD_BwE&partner_id=CUNP4U8&utm_medium=online_publisher&cmp=tour_getyourguide",
 
   // ==========================================
