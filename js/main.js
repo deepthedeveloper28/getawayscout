@@ -383,15 +383,27 @@ function setupFaqAccordions() {
   const faqHeaders = document.querySelectorAll(".faq-header");
 
   faqHeaders.forEach((header) => {
-    header.addEventListener("click", function () {
+    // Avoid attaching multiple listeners
+    if (header._hasFaqListener) return;
+    header._hasFaqListener = true;
+
+    header.addEventListener("click", function (e) {
+      e.preventDefault();
       const currentItem = this.closest(".faq-item");
-      const wasOpen = currentItem.classList.contains("open");
+      if (!currentItem) return;
+      const isOpen = currentItem.classList.contains("open");
 
-      // Optional: close other open accordions in the same list
-      const siblingItems = currentItem.parentElement.querySelectorAll(".faq-item");
-      siblingItems.forEach((item) => item.classList.remove("open"));
+      // Close sibling items in the same container
+      const container = currentItem.closest("#faqAccordionContainer") || currentItem.closest(".faq-container") || currentItem.parentElement;
+      if (container) {
+        container.querySelectorAll(".faq-item").forEach((item) => {
+          if (item !== currentItem) item.classList.remove("open");
+        });
+      }
 
-      if (!wasOpen) {
+      if (isOpen) {
+        currentItem.classList.remove("open");
+      } else {
         currentItem.classList.add("open");
       }
     });
