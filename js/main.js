@@ -28,7 +28,12 @@ document.addEventListener("DOMContentLoaded", function () {
   injectPageWidgets();
   initExpediaWidgets();
 
-  // 5. Background Prefetch WordPress & WooCommerce data for 0ms instant transitions
+  // 5. Render 3 Random Live WordPress Blogs on Homepage (Ultra-fast 0ms cache + fresh live fetch)
+  if (typeof VoyageurWP !== 'undefined' && typeof VoyageurWP.renderHomeBlogs === 'function') {
+    VoyageurWP.renderHomeBlogs('homeBlogsGrid', 3);
+  }
+
+  // 6. Background Prefetch WordPress & WooCommerce data for 0ms instant transitions
   if (typeof VoyageurWP !== 'undefined') {
     setTimeout(() => {
       if (typeof VoyageurWP.fetchPosts === 'function') VoyageurWP.fetchPosts();

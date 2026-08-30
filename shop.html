@@ -607,26 +607,41 @@
     // Lightning Fast Fast-Path: Instant Synchronous Hydration from Local Storage
     function hydrateFromCacheSync() {
       try {
-        const cachedCatsRaw = localStorage.getItem('voyageur_cache_product_categories_all');
-        const cachedProdsRaw = localStorage.getItem('voyageur_cache_products_all_');
-
-        if (cachedCatsRaw) {
-          const parsedCats = JSON.parse(cachedCatsRaw);
-          if (parsedCats && Array.isArray(parsedCats.data) && parsedCats.data.length > 1) {
-            renderCategoryButtons(parsedCats.data);
+        let prodsList = null;
+        if (typeof VoyageurWP !== 'undefined' && typeof VoyageurWP.getCachedData === 'function') {
+          const cached = VoyageurWP.getCachedData('products_all_', Infinity);
+          if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
+            prodsList = cached.products;
+          }
+          const cachedCats = VoyageurWP.getCachedData('product_categories_all', Infinity);
+          if (cachedCats && Array.isArray(cachedCats) && cachedCats.length > 1) {
+            renderCategoryButtons(cachedCats);
           }
         }
 
-        if (cachedProdsRaw) {
-          const parsedProds = JSON.parse(cachedProdsRaw);
-          if (parsedProds && parsedProds.data && Array.isArray(parsedProds.data.products) && parsedProds.data.products.length > 0) {
-            masterProducts = parsedProds.data.products;
-            if (!masterCategories || masterCategories.length <= 1) {
-              renderCategoryButtons(extractCategoriesFromProducts(masterProducts));
+        if (!prodsList) {
+          ['voy_fast_v3_products_all_', 'voyageur_cache_products_all_'].forEach(k => {
+            if (prodsList) return;
+            const raw = localStorage.getItem(k) || sessionStorage.getItem(k);
+            if (raw) {
+              try {
+                const parsed = JSON.parse(raw);
+                const data = parsed.data || parsed;
+                if (data && Array.isArray(data.products) && data.products.length > 0) {
+                  prodsList = data.products;
+                }
+              } catch (e) {}
             }
-            applyLocalFilter();
-            return true;
+          });
+        }
+
+        if (prodsList && prodsList.length > 0) {
+          masterProducts = prodsList;
+          if (!masterCategories || masterCategories.length <= 1) {
+            renderCategoryButtons(extractCategoriesFromProducts(masterProducts));
           }
+          applyLocalFilter();
+          return true;
         }
       } catch (e) {}
       return false;
@@ -637,7 +652,7 @@
       const grid = document.getElementById('productsGrid');
 
       // If we don't have products displayed yet, show animated radar loader
-      if (!masterProducts || masterProducts.length === 0 || forceRefresh) {
+      if ((!masterProducts || masterProducts.length === 0) || forceRefresh) {
         if (loading) loading.style.display = 'block';
         if (grid) grid.style.display = 'none';
         startTicker();
@@ -645,23 +660,38 @@
       }
 
       try {
-        const [catsRes, prodsRes] = await Promise.all([
-          VoyageurWP.fetchProductCategories(),
-          VoyageurWP.fetchProducts({ category: 'all' })
-        ]);
+        const prodsRes = await VoyageurWP.fetchProducts({ category: 'all' });
 
         if (prodsRes && Array.isArray(prodsRes.products) && prodsRes.products.length > 0) {
           masterProducts = prodsRes.products;
           applyLocalFilter();
-        }
 
-        if (catsRes && Array.isArray(catsRes) && catsRes.length > 1) {
-          renderCategoryButtons(catsRes);
-        } else if (masterProducts && masterProducts.length > 0) {
-          renderCategoryButtons(extractCategoriesFromProducts(masterProducts));
+          const catsRes = await VoyageurWP.fetchProductCategories();
+          if (catsRes && Array.isArray(catsRes) && catsRes.length > 1) {
+            renderCategoryButtons(catsRes);
+          } else {
+            renderCategoryButtons(extractCategoriesFromProducts(masterProducts));
+          }
+        } else if (!masterProducts || masterProducts.length === 0) {
+          const fallback = typeof VoyageurWP !== 'undefined' ? VoyageurWP.getCachedData('products_all_', Infinity) : null;
+          if (fallback && Array.isArray(fallback.products) && fallback.products.length > 0) {
+            masterProducts = fallback.products;
+            renderCategoryButtons(extractCategoriesFromProducts(masterProducts));
+            applyLocalFilter();
+          } else {
+            applyLocalFilter();
+          }
         }
       } catch (err) {
         console.error('Shop loading error:', err);
+        if (!masterProducts || masterProducts.length === 0) {
+          const fallback = typeof VoyageurWP !== 'undefined' ? VoyageurWP.getCachedData('products_all_', Infinity) : null;
+          if (fallback && Array.isArray(fallback.products) && fallback.products.length > 0) {
+            masterProducts = fallback.products;
+            renderCategoryButtons(extractCategoriesFromProducts(masterProducts));
+            applyLocalFilter();
+          }
+        }
       } finally {
         stopTicker();
         if (loading) loading.style.display = 'none';
