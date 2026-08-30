@@ -252,16 +252,21 @@
   <!-- ========================================== -->
   <!-- FOOTER -->
   <!-- ========================================== -->
-  <footer class="site-footer">
-    <!-- Newsletter Section -->
+  <footer class="site-footer-wrapper">
+    <!-- Newsletter -->
     <div class="container newsletter-box">
-      <div class="newsletter-content">
-        <h3 class="newsletter-title">Subscribe to Our Newsletter</h3>
-        <p class="newsletter-subtitle">Get the latest travel deals, destination guides, and member discounts delivered straight to your inbox.</p>
-      </div>
-      <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Thank you for subscribing!');">
-        <input type="email" placeholder="Enter your email address" class="newsletter-input" required />
-        <button type="submit" class="btn-primary-action" style="padding: 0.75rem 1.5rem; font-size: 0.875rem;">
+      <div class="section-eyebrow">Stay Updated</div>
+      <h2 class="section-title" style="margin-bottom: 1rem;">Get Exclusive Deals</h2>
+      <p style="color: var(--color-text-muted); font-size: 1.05rem;">
+        Subscribe to our newsletter and be the first to know about flash sales, new destinations, and travel tips.
+      </p>
+      <form class="newsletter-form" action="https://formsubmit.co/support@getawayscout.com" method="POST">
+        <input type="hidden" name="_captcha" value="false" />
+        <input type="hidden" name="_subject" value="New Newsletter Subscription - Getawayscout.com" />
+        <input type="hidden" name="_next" value="thank-you.html" />
+        <input type="email" name="email" placeholder="Enter your email" required class="newsletter-input" />
+        <button type="submit" class="newsletter-btn">
+          <i data-lucide="send" style="width: 16px; height: 16px;"></i>
           Subscribe
         </button>
       </form>
