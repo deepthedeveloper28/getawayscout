@@ -65,7 +65,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = FAST_TIMEOUT_MS) 
 // Persistent LocalStorage and Memory Cache (24-hour TTL for instant sub-millisecond loads)
 const cacheStore = new Map();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const CACHE_PREFIX = 'voy_fast_v3_';
+const CACHE_PREFIX = 'voy_fast_v4_';
 
 function getCachedData(key, maxAgeMs = CACHE_TTL_MS) {
   const mem = cacheStore.get(key);
@@ -184,6 +184,100 @@ function sanitizeCategory(cat) {
   };
 }
 
+/**
+ * Robust Product Price Parser
+ * Extracts the real price from WooCommerce prices object, price_html, or Amazon importer description.
+ * Never invents or generates random prices - returns '' if unknown.
+ */
+function extractProductPrice(item) {
+  if (!item) return '';
+
+  // 1. Check description / content for exact Amazon price e.g. "Price: $39.99"
+  const allText = [
+    item.short_description || '',
+    item.description || '',
+    item.excerpt?.rendered || '',
+    item.content?.rendered || ''
+  ].join(' ');
+
+  if (allText) {
+    const decoded = decodeHtmlEntities(allText)
+      .replace(/&#036;/g, '$')
+      .replace(/&#36;/g, '$')
+      .replace(/&pound;/g, '£')
+      .replace(/&euro;/g, '€');
+    
+    const pricePattern = /Price:\s*(?:<[^>]*>)*\s*([$£€]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)/i;
+    const match = decoded.match(pricePattern);
+    if (match && match[1]) {
+      let val = match[1].trim();
+      if (!val.startsWith('$') && !val.startsWith('£') && !val.startsWith('€')) {
+        val = '$' + val;
+      }
+      return val;
+    }
+  }
+
+  // 2. Check item.prices object (WooCommerce Store API)
+  if (item.prices) {
+    const rawPrice = item.prices.price || item.prices.sale_price || item.prices.regular_price;
+    if (rawPrice && rawPrice !== '0' && rawPrice !== '000') {
+      const decimals = item.prices.currency_minor_unit !== undefined ? item.prices.currency_minor_unit : 2;
+      const prefix = item.prices.currency_prefix || item.prices.currency_symbol || '$';
+      const suffix = item.prices.currency_suffix || '';
+      
+      if (typeof rawPrice === 'string' && rawPrice.includes('.')) {
+        return prefix + parseFloat(rawPrice).toFixed(decimals) + suffix;
+      } else {
+        const num = parseInt(rawPrice, 10);
+        if (!isNaN(num) && num > 0) {
+          const val = (num / Math.pow(10, decimals)).toFixed(decimals);
+          return prefix + val + suffix;
+        }
+      }
+    }
+  }
+
+  // 3. Check item.price_html
+  if (item.price_html && typeof item.price_html === 'string') {
+    const cleanHtml = decodeHtmlEntities(item.price_html)
+      .replace(/&#036;/g, '$')
+      .replace(/&#36;/g, '$')
+      .replace(/&pound;/g, '£')
+      .replace(/&euro;/g, '€');
+    const match = cleanHtml.match(/([$£€]\s*[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)/);
+    if (match && match[1]) {
+      return match[1].replace(/\s+/g, '');
+    }
+  }
+
+  return '';
+}
+
+/**
+ * Clean short description helper for product cards & previews
+ */
+function cleanShortDescription(str) {
+  if (!str) return 'Luxury gear engineered for effortless journeys.';
+  const cleaned = decodeHtmlEntities(str)
+    .replace(/<p>Price:[\s\S]*?<\/p>/gi, '')
+    .replace(/Price:\s*[$£€]?[0-9.,]+/gi, '')
+    .replace(/Buy On Amazon/gi, '')
+    .replace(/Product description/gi, '')
+    .replace(/<[^>]*>?/gm, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (cleaned.length > 180) {
+    return cleaned.substring(0, 180).replace(/\s+\S*$/, '') + '...';
+  }
+  return cleaned || 'Luxury gear engineered for effortless journeys.';
+}
+
+if (typeof window !== 'undefined') {
+  window.extractProductPrice = extractProductPrice;
+  window.cleanShortDescription = cleanShortDescription;
+}
+
 async function executeGraphQL(query, variables = {}, timeoutMs = FAST_TIMEOUT_MS) {
   const endpoint = getWpEndpoint();
   try {
@@ -221,6 +315,8 @@ window.VoyageurWP = {
   getEndpoint: getWpEndpoint,
   setEndpoint: setWpEndpoint,
   decodeHtmlEntities: decodeHtmlEntities,
+  extractProductPrice: extractProductPrice,
+  cleanShortDescription: cleanShortDescription,
   getCachedData: getCachedData,
   setCachedData: setCachedData,
 
@@ -467,7 +563,7 @@ window.VoyageurWP = {
         storeUrl += `&search=${encodeURIComponent(params.search.trim())}`;
       }
 
-      const storeRes = await fetchWithTimeout(storeUrl, { cache: 'default' }, 3500);
+      const storeRes = await fetchWithTimeout(storeUrl, { cache: 'default' }, STORE_TIMEOUT_MS);
       if (storeRes.ok) {
         const items = await storeRes.json();
         if (Array.isArray(items) && items.length > 0) {
@@ -481,18 +577,7 @@ window.VoyageurWP = {
             const content = item.description || '';
             const excerpt = item.short_description || content;
             
-            let priceFormatted = '$249.00';
-            let regPriceFormatted = '$299.00';
-            if (item.prices?.price && parseInt(item.prices.price, 10) > 0) {
-              const decimals = item.prices.currency_minor_unit || 2;
-              const val = (parseInt(item.prices.price, 10) / Math.pow(10, decimals)).toFixed(decimals);
-              priceFormatted = `${item.prices.currency_prefix || '$'}${val}`;
-            } else {
-              const baseVal = 79 + (index * 25) % 200;
-              priceFormatted = `$${baseVal}.00`;
-              regPriceFormatted = `$${baseVal + 40}.00`;
-            }
-
+            const priceFormatted = extractProductPrice(item);
             const cats = (item.categories || []).map(c => ({ id: String(c.id), name: decodeHtmlEntities(c.name), slug: c.slug }));
 
             const prodObj = sanitizeProduct({
@@ -503,8 +588,8 @@ window.VoyageurWP = {
               description: content,
               shortDescription: excerpt,
               price: priceFormatted,
-              regularPrice: regPriceFormatted,
-              onSale: item.on_sale || (index % 3 === 0),
+              regularPrice: '',
+              onSale: item.on_sale || false,
               sku: item.sku || `GETAWAY-${item.id}`,
               averageRating: parseFloat(item.average_rating) || 4.9,
               reviewCount: parseInt(item.review_count, 10) || (12 + (index * 2)),
@@ -542,7 +627,7 @@ window.VoyageurWP = {
         url += `&search=${encodeURIComponent(params.search.trim())}`;
       }
 
-      const restRes = await fetchWithTimeout(url, { cache: 'default' }, 3500);
+      const restRes = await fetchWithTimeout(url, { cache: 'default' }, STORE_TIMEOUT_MS);
       if (restRes.ok) {
         const items = await restRes.json();
         if (Array.isArray(items) && items.length > 0) {
@@ -552,7 +637,7 @@ window.VoyageurWP = {
             const title = decodeHtmlEntities(item.title?.rendered || item.slug);
             const content = item.content?.rendered || '';
             const excerpt = item.excerpt?.rendered || content;
-            const basePrice = 120 + (index * 45) % 350;
+            const priceFormatted = extractProductPrice(item);
 
             const terms = item._embedded?.['wp:term'] || [];
             const cats = [];
@@ -571,9 +656,9 @@ window.VoyageurWP = {
               slug: item.slug,
               description: content,
               shortDescription: excerpt,
-              price: `$${basePrice}.00`,
-              regularPrice: `$${basePrice + 50}.00`,
-              onSale: index % 3 === 0,
+              price: priceFormatted,
+              regularPrice: '',
+              onSale: false,
               averageRating: 4.9,
               reviewCount: 15 + (index * 2),
               image: { sourceUrl: media, altText: title },
@@ -593,6 +678,7 @@ window.VoyageurWP = {
           }
           const result = { products: filtered, isLive: true };
           setCachedData(cacheKey, result);
+          setCachedData('products_all_', { products: mapped, isLive: true });
           return result;
         }
       }
@@ -600,7 +686,21 @@ window.VoyageurWP = {
       console.warn('[WP REST Products] Error:', err.message);
     }
 
-    // 3. Static fallback
+    // 3. Resilient fallback to any previous cache
+    const existingCache = getCachedData('products_all_', Infinity);
+    if (existingCache && Array.isArray(existingCache.products) && existingCache.products.length > 0) {
+      let filtered = existingCache.products;
+      if (params.category && params.category !== 'all') {
+        filtered = filtered.filter(p => p.productCategories?.nodes?.some(c => c.slug === params.category));
+      }
+      if (params.search && params.search.trim()) {
+        const s = params.search.toLowerCase();
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(s) || p.shortDescription.toLowerCase().includes(s));
+      }
+      return { products: filtered, isLive: true };
+    }
+
+    // 4. Static fallback
     let filtered = [...FALLBACK_PRODUCTS];
     if (params.category && params.category !== 'all') {
       filtered = filtered.filter(p => p.productCategories?.nodes?.some(c => c.slug === params.category));
@@ -617,9 +717,9 @@ window.VoyageurWP = {
     const cached = getCachedData(cacheKey);
     if (cached && cached.isLive) return cached;
 
-    // Fast Store API by slug
+    // Check products_all_ cache
     try {
-      const allCached = getCachedData('products_all_');
+      const allCached = getCachedData('products_all_', Infinity);
       if (allCached && Array.isArray(allCached.products)) {
         const found = allCached.products.find(p => p.slug === slug || String(p.databaseId) === slug);
         if (found) {
@@ -630,10 +730,10 @@ window.VoyageurWP = {
       }
     } catch (e) {}
 
-    // REST fetch
+    // Store API fetch by slug
     try {
       const baseUrl = getSiteBaseUrl();
-      const restRes = await fetchWithTimeout(`${baseUrl}/wp-json/wc/store/v1/products?slug=${encodeURIComponent(slug)}`, { cache: 'default' }, 3500);
+      const restRes = await fetchWithTimeout(`${baseUrl}/wp-json/wc/store/v1/products?slug=${encodeURIComponent(slug)}`, { cache: 'default' }, STORE_TIMEOUT_MS);
       if (restRes.ok) {
         const items = await restRes.json();
         if (Array.isArray(items) && items.length > 0) {
@@ -642,6 +742,7 @@ window.VoyageurWP = {
           const gallery = (item.images || []).map(img => ({ sourceUrl: img.src }));
           const title = decodeHtmlEntities(item.name || item.slug);
           const cats = (item.categories || []).map(c => ({ id: String(c.id), name: decodeHtmlEntities(c.name), slug: c.slug }));
+          const priceFormatted = extractProductPrice(item);
 
           const result = {
             product: sanitizeProduct({
@@ -651,12 +752,12 @@ window.VoyageurWP = {
               slug: item.slug,
               description: item.description || '',
               shortDescription: item.short_description || item.description || '',
-              price: '$249.00',
-              regularPrice: '$299.00',
-              onSale: true,
+              price: priceFormatted,
+              regularPrice: '',
+              onSale: item.on_sale || false,
               sku: item.sku || `GETAWAY-${item.id}`,
-              averageRating: 4.9,
-              reviewCount: 16,
+              averageRating: parseFloat(item.average_rating) || 4.9,
+              reviewCount: parseInt(item.review_count, 10) || 16,
               image: { sourceUrl: media, altText: title },
               galleryImages: { nodes: gallery.length > 0 ? gallery : [{ sourceUrl: media }] },
               productCategories: { nodes: cats.length > 0 ? cats : [{ id: 'pcat-1', name: "Travel Gear", slug: 'gear' }] },

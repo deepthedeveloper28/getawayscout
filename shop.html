@@ -521,14 +521,16 @@
                 </h3>
               </a>
               <p style="font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.35; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                ${p.shortDescription ? p.shortDescription.replace(/<[^>]*>?/gm, '') : 'Luxury gear engineered for effortless journeys.'}
+                ${typeof cleanShortDescription === 'function' 
+                  ? cleanShortDescription(p.shortDescription || p.description) 
+                  : (VoyageurWP.cleanShortDescription ? VoyageurWP.cleanShortDescription(p.shortDescription || p.description) : (p.shortDescription ? p.shortDescription.replace(/<[^>]*>?/gm, '') : 'Luxury gear engineered for effortless journeys.'))}
               </p>
             </div>
           </div>
 
           <div style="padding: 0.75rem 1rem; border-top: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between;">
             <span style="font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--color-navy);">
-              ${p.price || '$249.00'}
+              ${p.price ? p.price : ''}
             </span>
             <a href="product-single.html?slug=${p.slug}" class="btn-primary-action" style="padding: 0.35rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700;">
               Details &rarr;
@@ -631,7 +633,7 @@
         }
 
         if (!prodsList) {
-          ['voy_fast_v3_products_all_', 'voyageur_cache_products_all_'].forEach(k => {
+          ['voy_fast_v4_products_all_', 'voy_fast_v3_products_all_'].forEach(k => {
             if (prodsList) return;
             const raw = localStorage.getItem(k) || sessionStorage.getItem(k);
             if (raw) {

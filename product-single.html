@@ -322,8 +322,19 @@
       document.title = decodedProdName + ' - Getawayscout.com Boutique';
       document.getElementById('breadcrumbProdName').innerText = decodedProdName;
       document.getElementById('prodName').innerText = decodedProdName;
-      document.getElementById('prodPrice').innerText = currentProd.price || '$299.00';
-      document.getElementById('prodShortDesc').innerHTML = currentProd.shortDescription || currentProd.description;
+      
+      if (currentProd.price) {
+        document.getElementById('prodPrice').style.display = 'block';
+        document.getElementById('prodPrice').innerText = currentProd.price;
+      } else {
+        document.getElementById('prodPrice').style.display = 'none';
+        document.getElementById('prodPrice').innerText = '';
+      }
+
+      const shortClean = typeof cleanShortDescription === 'function' 
+        ? cleanShortDescription(currentProd.shortDescription || currentProd.description) 
+        : (VoyageurWP.cleanShortDescription ? VoyageurWP.cleanShortDescription(currentProd.shortDescription || currentProd.description) : (currentProd.shortDescription || currentProd.description));
+      document.getElementById('prodShortDesc').innerHTML = `<p>${shortClean}</p>`;
       document.getElementById('prodFullDesc').innerHTML = currentProd.description || currentProd.shortDescription;
       document.getElementById('prodSku').innerText = currentProd.sku || 'VOY-2026';
 
