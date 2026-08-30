@@ -27,7 +27,8 @@ const affiliateConfig = {
   socialLinks: {
     facebook: "https://facebook.com",
     instagram: "https://instagram.com",
-    twitter: "https://twitter.com"
+    x: "https://x.com",
+    twitter: "https://x.com"
   },
   simBookingLink: "https://drimsim.tpm.lv/ujiSxKSo",
   insuranceLink: "https://ektatraveling.com/?sub_id=ce936106e758475091d2baa8b-767941&utm_source=travelpayouts",
