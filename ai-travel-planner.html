@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Trip Planner | Personalized Multi-Day Vacation Itineraries | Getawayscout</title>
+  <meta name="description" content="Generate instant, personalized day-by-day travel itineraries with our Custom Trip Planner. Discover local secrets, daily schedules, food guides, and budget estimates." />
+  <meta name="keywords" content="custom trip planner, personalized vacation itinerary, travel schedule generator, custom itinerary builder, Getawayscout" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <link rel="canonical" href="https://getawayscout.com/ai-travel-planner" />
+  
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Getawayscout" />
+  <meta property="og:title" content="Custom Trip Planner | Personalized Vacation Itineraries | Getawayscout" />
+  <meta property="og:description" content="Generate instant, personalized day-by-day travel itineraries with our Custom Trip Planner. Discover local secrets, daily schedules, food guides, and budget estimates." />
+  <meta property="og:url" content="https://getawayscout.com/ai-travel-planner" />
+  <meta property="og:image" content="https://getawayscout.com/images/hero_travel.png" />
+  
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@getawayscout" />
+  <meta name="twitter:title" content="Custom Trip Planner | Personalized Vacation Itineraries | Getawayscout" />
+  <meta name="twitter:description" content="Generate instant, personalized day-by-day travel itineraries with our Custom Trip Planner." />
+  <meta name="twitter:image" content="https://getawayscout.com/images/hero_travel.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Getawayscout Custom Trip Planner",
+    "url": "https://getawayscout.com/ai-travel-planner",
+    "description": "Personalized travel itinerary generator providing custom vacation plans, food highlights, and budget estimates.",
+    "applicationCategory": "TravelApplication",
+    "operatingSystem": "All"
+  }
+  </script>
+
+  <link rel="icon" type="image/svg+xml" href="favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" />
+  <link rel="stylesheet" href="css/styles.min.css?v=11" />
+  <link rel="stylesheet" href="css/trip-planner.css" />
+  <script src="js/lucide.min.js" defer></script>
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="nav-pill-container">
+      <a href="/" class="brand-logo">
+        <img decoding="async" width="180" height="42" src="images/logo.webp" alt="Getawayscout.com" class="brand-logo-img" />
+      </a>
+      <nav class="nav-links-center">
+        <a href="/" class="nav-link">Home</a>
+        <a href="flights.html" class="nav-link">Flight</a>
+        <a href="hotels.html" class="nav-link">Hotel</a>
+        <a href="cars.html" class="nav-link">Car</a>
+        <a href="cabs.html" class="nav-link">Cab</a>
+        <a href="bikes.html" class="nav-link">Bike</a>
+        <a href="tours.html" class="nav-link">Tour</a>
+        <a href="sim.html" class="nav-link">Sim</a>
+        <a href="compensation.html" class="nav-link">Compensation</a>
+        <a href="https://gocity.tpx.li/z9tGcfbO" target="_blank" rel="noopener noreferrer" class="nav-link">Event</a>
+        <a href="https://ektatraveling.com/?sub_id=ce936106e758475091d2baa8b-767941&utm_source=travelpayouts" target="_blank" rel="noopener noreferrer" class="nav-link">Insurance</a>
+        <a href="shop.html" class="nav-link">Shop</a>
+        <a href="blog.html" class="nav-link">Blog</a>
+      </nav>
+      <div class="nav-actions-right">
+        <a href="contact.html" class="btn-contact-nav">Contact Us</a>
+      </div>
+      <button id="mobileToggleBtn" class="mobile-toggle-btn" aria-label="Open menu">
+        <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+      </button>
+      <div id="mobileMenuDrawer" class="mobile-menu-drawer">
+        <div class="mobile-menu-links">
+          <a href="/" class="mobile-nav-link">Home</a>
+          <a href="flights.html" class="mobile-nav-link">Flight</a>
+          <a href="hotels.html" class="mobile-nav-link">Hotel</a>
+          <a href="cars.html" class="mobile-nav-link">Car</a>
+          <a href="cabs.html" class="mobile-nav-link">Cab</a>
+          <a href="bikes.html" class="mobile-nav-link">Bike</a>
+          <a href="tours.html" class="mobile-nav-link">Tour</a>
+          <a href="sim.html" class="mobile-nav-link">Sim</a>
+          <a href="compensation.html" class="mobile-nav-link">Compensation</a>
+          <a href="https://gocity.tpx.li/z9tGcfbO" target="_blank" rel="noopener noreferrer" class="mobile-nav-link">Event</a>
+          <a href="https://ektatraveling.com/?sub_id=ce936106e758475091d2baa8b-767941&utm_source=travelpayouts" target="_blank" rel="noopener noreferrer" class="mobile-nav-link">Insurance</a>
+          <a href="shop.html" class="mobile-nav-link">Shop</a>
+          <a href="blog.html" class="mobile-nav-link">Blog</a>
+          <a href="contact.html" class="btn-primary-action" style="text-align: center; border-radius: 0.75rem; padding: 0.75rem;">Contact Us</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section page-hero" style="min-height: 480px;">
+    <div class="hero-bg">
+      <div class="hero-bg-overlay"></div>
+      <img decoding="async" fetchpriority="high" src="images/hero_cappadocia.webp" alt="Custom Trip Planner Hero" />
+    </div>
+    <div class="container hero-content">
+      <div class="max-w-3xl" style="margin: 0 auto; text-align: center;">
+        <div class="hero-eyebrow" style="color: var(--color-white); justify-content: center;">
+          <span>✦</span> PERSONALIZED VACATION CURATION
+        </div>
+        <h1 class="hero-title" style="font-size: clamp(2.2rem, 4vw, 3.5rem);">
+          Custom <span class="text-gradient-gold" style="font-style: italic; font-weight: 700;">Trip</span> Planner
+        </h1>
+        <p class="hero-subtitle" style="margin: 1rem auto 0; max-width: 680px; color: rgba(255, 255, 255, 0.9);">
+          Craft your dream vacation in seconds. Tell us where you want to go and receive an immersive, personalized day-by-day itinerary complete with morning-to-night activities, culinary secrets, and budget estimates.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trip Planner Interactive Embed Section -->
+  <section id="atp-print-section" class="atp-print-section" style="padding: 3.5rem 0 5rem 0; background-color: var(--color-cream); position: relative; margin-top: -2rem;">
+    <div class="container" style="max-width: 1160px; padding: 0 1rem;">
+      
+      <!-- Widget Container -->
+      <div id="ai-trip-planner"></div>
+
+    </div>
+  </section>
+
+  <!-- Features Highlight -->
+  <section style="padding: 4.5rem 0; background-color: var(--color-white);">
+    <div class="container max-w-6xl">
+      <div class="section-header" style="text-align: center;">
+        <div class="section-eyebrow">Smart Travel Technology</div>
+        <h2 class="section-title">Why Use Our Custom Trip Planner?</h2>
+        <p class="section-subtitle" style="max-width: 600px; margin: 0.5rem auto 0;">
+          Eliminate endless hours of research and conflicting travel blogs with an intelligent itinerary engine.
+        </p>
+      </div>
+
+      <div class="feature-strip-grid cols-4" style="margin-top: 3rem; gap: 1.5rem;">
+        <div class="deal-card" style="padding: 1.75rem 1.5rem; text-align: center; align-items: center;">
+          <div class="brand-icon-box" style="width: 4rem; height: 4rem; border-radius: 1rem; background: var(--color-primary-light); color: var(--color-primary); margin-bottom: 1.25rem;">
+            <i data-lucide="sparkles" style="width: 28px; height: 28px;"></i>
+          </div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--color-navy); margin-bottom: 0.5rem;">Instant Custom Plans</h3>
+          <p style="color: var(--color-text-muted); font-size: 0.88rem; line-height: 1.6;">
+            Tailored itineraries generated in seconds matching your style, party size, and pace.
+          </p>
+        </div>
+
+        <div class="deal-card" style="padding: 1.75rem 1.5rem; text-align: center; align-items: center;">
+          <div class="brand-icon-box" style="width: 4rem; height: 4rem; border-radius: 1rem; background: var(--color-primary-light); color: var(--color-primary); margin-bottom: 1.25rem;">
+            <i data-lucide="map-pinned" style="width: 28px; height: 28px;"></i>
+          </div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--color-navy); margin-bottom: 0.5rem;">Curated Local Gems</h3>
+          <p style="color: var(--color-text-muted); font-size: 0.88rem; line-height: 1.6;">
+            Detailed morning, afternoon, and evening guides with authentic sights and food spots.
+          </p>
+        </div>
+
+        <div class="deal-card" style="padding: 1.75rem 1.5rem; text-align: center; align-items: center;">
+          <div class="brand-icon-box" style="width: 4rem; height: 4rem; border-radius: 1rem; background: var(--color-primary-light); color: var(--color-primary); margin-bottom: 1.25rem;">
+            <i data-lucide="badge-dollar-sign" style="width: 28px; height: 28px;"></i>
+          </div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--color-navy); margin-bottom: 0.5rem;">USD Budget Estimates</h3>
+          <p style="color: var(--color-text-muted); font-size: 0.88rem; line-height: 1.6;">
+            Real-world price tiering, currency overviews, and packing checklists for complete peace of mind.
+          </p>
+        </div>
+
+        <div class="deal-card" style="padding: 1.75rem 1.5rem; text-align: center; align-items: center;">
+          <div class="brand-icon-box" style="width: 4rem; height: 4rem; border-radius: 1rem; background: var(--color-primary-light); color: var(--color-primary); margin-bottom: 1.25rem;">
+            <i data-lucide="ticket" style="width: 28px; height: 28px;"></i>
+          </div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--color-navy); margin-bottom: 0.5rem;">One-Click Tour Booking</h3>
+          <p style="color: var(--color-text-muted); font-size: 0.88rem; line-height: 1.6;">
+            Direct links to verified GetYourGuide attractions and experiences with instant booking.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section style="padding: 5rem 0; background-color: var(--color-cream);">
+    <div class="container max-w-3xl">
+      <div class="section-header">
+        <div class="section-eyebrow">Got Questions?</div>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-subtitle">Everything you need to know about our Custom Trip Planner</p>
+      </div>
+      <div class="faq-container">
+        <div class="faq-item open">
+          <button class="faq-header">
+            <span class="faq-question-text">
+              <i data-lucide="check-circle-2" style="color: var(--color-primary); width: 20px; height: 20px; flex-shrink: 0;"></i>
+              How does the Custom Trip Planner generate itineraries?
+            </span>
+            <i data-lucide="chevron-down" class="faq-icon-arrow"></i>
+          </button>
+          <div class="faq-body">
+            Our intelligent engine analyzes thousands of travel data points, attractions, seasonal weather patterns, and local recommendations to generate a coherent, realistic day-by-day itinerary tailored precisely to your destination, trip length, and interests.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-header">
+            <span class="faq-question-text">
+              <i data-lucide="check-circle-2" style="color: var(--color-primary); width: 20px; height: 20px; flex-shrink: 0;"></i>
+              Can I customize my trip duration and budget?
+            </span>
+            <i data-lucide="chevron-down" class="faq-icon-arrow"></i>
+          </button>
+          <div class="faq-body">
+            Yes! You can choose any duration from 1 to 14 days, select your preferred travel style (e.g. Balanced, Relaxed, Fast-Paced, Romantic, Family), and choose your budget tier (Budget, Moderate, or Luxury).
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-header">
+            <span class="faq-question-text">
+              <i data-lucide="check-circle-2" style="color: var(--color-primary); width: 20px; height: 20px; flex-shrink: 0;"></i>
+              Can I print or save my generated itinerary?
+            </span>
+            <i data-lucide="chevron-down" class="faq-icon-arrow"></i>
+          </button>
+          <div class="faq-body">
+            Absolutely. Once your itinerary is generated, use the "Print / Save PDF" button to print a beautifully formatted, multi-page travel guide or save it directly to your mobile device as a PDF.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-header">
+            <span class="faq-question-text">
+              <i data-lucide="check-circle-2" style="color: var(--color-primary); width: 20px; height: 20px; flex-shrink: 0;"></i>
+              How do I book activities and tickets mentioned in the plan?
+            </span>
+            <i data-lucide="chevron-down" class="faq-icon-arrow"></i>
+          </button>
+          <div class="faq-body">
+            Every activity includes a "Book Tour ↗" button that connects directly to GetYourGuide verified tickets and guided tours with instant confirmation and free cancellation on most experiences.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Site Footer -->
+  <footer class="site-footer-wrapper">
+    <div class="container newsletter-box">
+      <div class="section-eyebrow">Stay Updated</div>
+      <h2 class="section-title" style="margin-bottom: 1rem;">Get Exclusive Deals</h2>
+      <p style="color: var(--color-text-muted); font-size: 1.05rem;">
+        Subscribe to our newsletter and be the first to know about flash sales, new destinations, and travel tips.
+      </p>
+      <form class="newsletter-form" action="https://formsubmit.co/support@getawayscout.com" method="POST">
+        <input type="hidden" name="_captcha" value="false" />
+        <input type="hidden" name="_subject" value="New Newsletter Subscription - Getawayscout.com" />
+        <input type="hidden" name="_next" value="thank-you.html" />
+        <input type="email" name="email" placeholder="Enter your email" required class="newsletter-input" />
+        <button type="submit" class="newsletter-btn">
+          <i data-lucide="send" style="width: 16px; height: 16px;"></i> Subscribe
+        </button>
+      </form>
+    </div>
+
+    <div class="site-footer-dark">
+      <div class="container">
+        <div class="footer-nav-grid">
+          <div>
+            <a href="/" class="brand-logo" style="margin-bottom: 1.5rem; display: inline-flex;">
+              <img decoding="async" width="180" height="42" src="images/logo_white.webp" alt="Getawayscout.com" class="brand-logo-img footer-logo-img" />
+            </a>
+            <p style="color: rgba(255,255,255,0.6); max-width: 18rem; font-size: 0.925rem;">
+              Crafting unforgettable travel experiences since 2020. Your adventure starts with us.
+            </p>
+          </div>
+          <div>
+            <h4 class="footer-col-title">Need Help?</h4>
+            <ul class="footer-link-list">
+              <li><a href="contact.html" class="footer-link">Contact Us</a></li>
+              <li><a href="faq.html" class="footer-link">FAQs</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="footer-col-title">General Route</h4>
+            <ul class="footer-link-list">
+              <li><a href="ai-travel-planner.html" class="footer-link" style="color: var(--color-primary); font-weight: 600;">Custom Trip Planner</a></li>
+              <li><a href="flights.html" class="footer-link">Flights</a></li>
+              <li><a href="hotels.html" class="footer-link">Hotels</a></li>
+              <li><a href="tours.html" class="footer-link">Tours</a></li>
+              <li><a href="cars.html" class="footer-link">Car Rentals</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="footer-col-title">Legal Pages</h4>
+            <ul class="footer-link-list">
+              <li><a href="terms.html" class="footer-link">Terms of Service</a></li>
+              <li><a href="privacy.html" class="footer-link">Privacy Policy</a></li>
+              <li><a href="cookies.html" class="footer-link">Cookie Policy</a></li>
+              <li><a href="disclaimer.html" class="footer-link">Disclaimer</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="footer-col-title">Explore More</h4>
+            <ul class="footer-link-list">
+              <li><a href="about.html" class="footer-link">About Us</a></li>
+              <li><a href="shop.html" class="footer-link">Shop</a></li>
+              <li><a href="blog.html" class="footer-link">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom-bar">
+          <p style="color: rgba(255,255,255,0.4); font-size: 0.875rem;">
+            &copy; 2026 Getawayscout.com. All rights reserved.
+          </p>
+          <div style="display: flex; gap: 1.5rem;">
+            <a href="https://x.com" class="footer-link">X</a>
+            <a href="https://instagram.com" class="footer-link">Instagram</a>
+            <a href="https://facebook.com" class="footer-link">Facebook</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="partners-strip">
+        <div class="container">
+          <div class="partners-list">
+            <span class="partner-logo-item">Booking.com</span>
+            <span class="partner-logo-item">Expedia</span>
+            <span class="partner-logo-item">Travelpayouts</span>
+            <span class="partner-logo-item">GetYourGuide</span>
+            <span class="partner-logo-item">BikesBooking.com</span>
+            <span class="partner-logo-item">Airalo</span>
+            <span class="partner-logo-item">Aviasales</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/affiliate.min.js" defer></script>
+  <script src="js/main.min.js" defer></script>
+  <script src="js/trip-planner.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      AITripPlanner.init({
+        container: '#ai-trip-planner',
+        endpoint: './api/trip-planner.php',
+        getYourGuidePartnerId: 'CUNP4U8',
+        theme: {
+          primaryColor: '#E6911A',
+          primaryHover: '#cc7d12',
+          fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          borderRadius: '1.25rem'
+        },
+        labels: {
+          badge: '✨ Custom Trip Concierge',
+          title: 'Plan Your Dream Vacation',
+          subtitle: 'Instant personalized multi-day itineraries, culinary guides & USD budget estimates.',
+          submitButton: '✨ Generate My Custom Travel Plan'
+        }
+      });
+    });
+  </script>
+</body>
+</html>

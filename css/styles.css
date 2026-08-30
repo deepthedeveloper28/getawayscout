@@ -487,6 +487,21 @@ button, input, select, textarea {
   object-position: center;
 }
 
+/* Home page hero image couple-centering on mobile/tablet */
+@media (max-width: 991px) {
+  .hero-section:not(.page-hero) .hero-bg img,
+  .hero-bg img[src*="hero_cappadocia"] {
+    object-position: 72% 28%;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-section:not(.page-hero) .hero-bg img,
+  .hero-bg img[src*="hero_cappadocia"] {
+    object-position: 74% 22%;
+  }
+}
+
 .hero-content {
   position: relative;
   z-index: 10;

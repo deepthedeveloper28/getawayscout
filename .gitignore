@@ -1,0 +1,13 @@
+# Environment & Secrets
+.env
+api/.env
+*.env
+
+# Dependencies & Local Run
+node_modules/
+package-lock.json
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log
