@@ -320,6 +320,18 @@
       }
 
       currentProd = res.product;
+
+      // Real-time price verification to guarantee sale price is selected even with cached objects
+      const priceEvaluator = typeof extractProductPrices === 'function' ? extractProductPrices : (typeof VoyageurWP !== 'undefined' ? VoyageurWP.extractProductPrices : null);
+      if (priceEvaluator) {
+        const freshPrices = priceEvaluator(currentProd);
+        if (freshPrices && freshPrices.price) {
+          currentProd.price = freshPrices.price;
+          currentProd.regularPrice = freshPrices.regularPrice;
+          currentProd.onSale = freshPrices.onSale;
+        }
+      }
+
       const decodedProdName = typeof decodeHtmlEntities === 'function' ? decodeHtmlEntities(currentProd.name) : currentProd.name;
       document.title = decodedProdName + ' - Getawayscout.com Boutique';
       document.getElementById('breadcrumbProdName').innerText = decodedProdName;

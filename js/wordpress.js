@@ -65,7 +65,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = FAST_TIMEOUT_MS) 
 // Persistent LocalStorage and Memory Cache (24-hour TTL for instant sub-millisecond loads)
 const cacheStore = new Map();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const CACHE_PREFIX = 'voy_fast_v5_';
+const CACHE_PREFIX = 'voy_fast_v6_';
 
 function getCachedData(key, maxAgeMs = CACHE_TTL_MS) {
   const mem = cacheStore.get(key);
@@ -244,43 +244,66 @@ function extractProductPrices(item) {
     }
   }
 
-  // 3. From description / content (e.g. WP REST API fallback)
-  if (!currentPrice) {
-    const allText = [
-      item?.short_description || '',
-      item?.description || '',
-      item?.excerpt?.rendered || '',
-      item?.content?.rendered || ''
-    ].join(' ');
+  // 2. From Description / Content / Overview (Always check for Amazon overview pricing)
+  const allText = [
+    item?.content?.rendered || '',
+    item?.description || '',
+    item?.shortDescription || '',
+    item?.short_description || '',
+    item?.excerpt?.rendered || ''
+  ].join(' ');
 
-    if (allText) {
-      const decoded = decodeHtmlEntities(allText)
-        .replace(/&#036;/g, '$').replace(/&#36;/g, '$').replace(/&pound;/g, '£').replace(/&euro;/g, '€');
+  if (allText) {
+    const decoded = decodeHtmlEntities(allText)
+      .replace(/&#036;/g, '$').replace(/&#36;/g, '$').replace(/&pound;/g, '£').replace(/&euro;/g, '€');
+    
+    // Look for the Price: block
+    const priceBlockMatch = decoded.match(/Price:\s*([\s\S]*?)(?:<i>|<small|<br|<\/p|\n|$)/i);
+    if (priceBlockMatch && priceBlockMatch[1]) {
+      const block = priceBlockMatch[1];
       
-      const priceSectionMatch = decoded.match(/Price:\s*(?:<span[^>]*>)?([\s\S]*?)(?:<\/span>|<br|\n|$)/i);
-      if (priceSectionMatch && priceSectionMatch[1]) {
-        const section = priceSectionMatch[1];
-        const delM = section.match(/<del[^>]*>[\s\S]*?([$£€]?[0-9.,]+)[\s\S]*?<\/del>/i);
-        const insM = section.match(/<ins[^>]*>[\s\S]*?([$£€]?[0-9.,]+)[\s\S]*?<\/ins>/i);
+      // Look for <del>$12.99</del>
+      const delMatch = block.match(/<del[^>]*>([\s\S]*?)<\/del>/i);
+      if (delMatch && delMatch[1]) {
+        // Strip HTML inside del to get regular price
+        const delClean = delMatch[1].replace(/<[^>]*>/g, ' ').trim();
+        const delPriceMatch = delClean.match(/([$£€]\s*[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2}))/);
+        if (delPriceMatch && delPriceMatch[1]) {
+          let dp = delPriceMatch[1].replace(/\s+/g, '');
+          if (!dp.startsWith('$') && !dp.startsWith('£') && !dp.startsWith('€')) dp = '$' + dp;
+          regularPrice = dp;
+        }
+
+        // Get sale price after del tag
+        const afterDel = block.substring(block.indexOf('</del>') + 6).replace(/<[^>]*>/g, ' ').trim();
+        const salePriceMatch = afterDel.match(/([$£€]\s*[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2}))/);
+        if (salePriceMatch && salePriceMatch[1]) {
+          let sp = salePriceMatch[1].replace(/\s+/g, '');
+          if (!sp.startsWith('$') && !sp.startsWith('£') && !sp.startsWith('€')) sp = '$' + sp;
+          currentPrice = sp;
+          isOnSale = true;
+        }
+      } else {
+        // No del tag - strip all HTML tags first to prevent matching style="color:#b12704" hex codes!
+        const blockClean = block.replace(/<[^>]*>/g, ' ').trim();
         
-        if (delM && delM[1]) {
-          regularPrice = delM[1].trim();
-          if (!regularPrice.startsWith('$') && !regularPrice.startsWith('£') && !regularPrice.startsWith('€')) regularPrice = '$' + regularPrice;
-          
-          if (insM && insM[1]) {
-            currentPrice = insM[1].trim();
-          } else {
-            const afterDel = section.replace(/<del[\s\S]*?<\/del>/gi, '');
-            const m = afterDel.match(/([$£€]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)/);
-            if (m && m[1]) currentPrice = m[1].trim();
-          }
-          if (currentPrice && !currentPrice.startsWith('$') && !currentPrice.startsWith('£') && !currentPrice.startsWith('€')) currentPrice = '$' + currentPrice;
-          if (currentPrice) isOnSale = true;
+        // Range like $12.99 - $9.98
+        const rangeMatch = blockClean.match(/([$£€]?\s*[0-9]+(?:\.[0-9]{2})?)\s*[-–—]\s*([$£€]?\s*[0-9]+(?:\.[0-9]{2})?)/);
+        if (rangeMatch && rangeMatch[1] && rangeMatch[2]) {
+          let p1 = rangeMatch[1].replace(/\s+/g, '');
+          let p2 = rangeMatch[2].replace(/\s+/g, '');
+          if (!p1.startsWith('$')) p1 = '$' + p1;
+          if (!p2.startsWith('$')) p2 = '$' + p2;
+          regularPrice = p1;
+          currentPrice = p2;
+          isOnSale = true;
         } else {
-          const m = section.match(/([$£€]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)/);
-          if (m && m[1]) {
-            currentPrice = m[1].trim();
-            if (!currentPrice.startsWith('$') && !currentPrice.startsWith('£') && !currentPrice.startsWith('€')) currentPrice = '$' + currentPrice;
+          // Single price e.g. $39.99
+          const singleMatch = blockClean.match(/([$£€]\s*[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2}))/);
+          if (singleMatch && singleMatch[1]) {
+            let p = singleMatch[1].replace(/\s+/g, '');
+            if (!p.startsWith('$') && !p.startsWith('£') && !p.startsWith('€')) p = '$' + p;
+            if (!currentPrice) currentPrice = p;
           }
         }
       }

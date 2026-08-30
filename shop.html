@@ -636,7 +636,7 @@
         }
 
         if (!prodsList) {
-          ['voy_fast_v5_', 'voy_fast_v4_', 'voy_fast_v3_'].forEach(prefix => {
+          ['voy_fast_v6_', 'voy_fast_v5_', 'voy_fast_v4_'].forEach(prefix => {
             if (prodsList) return;
             const k = prefix + 'products_all_';
             const raw = localStorage.getItem(k) || sessionStorage.getItem(k);
