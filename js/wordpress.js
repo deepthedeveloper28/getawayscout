@@ -65,7 +65,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = FAST_TIMEOUT_MS) 
 // Persistent LocalStorage and Memory Cache (24-hour TTL for instant sub-millisecond loads)
 const cacheStore = new Map();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const CACHE_PREFIX = 'voy_fast_v4_';
+const CACHE_PREFIX = 'voy_fast_v5_';
 
 function getCachedData(key, maxAgeMs = CACHE_TTL_MS) {
   const mem = cacheStore.get(key);
@@ -187,71 +187,115 @@ function sanitizeCategory(cat) {
 /**
  * Robust Product Price Parser
  * Extracts the real price from WooCommerce prices object, price_html, or Amazon importer description.
+ * Correctly distinguishes current final/sale price from original regular price.
  * Never invents or generates random prices - returns '' if unknown.
  */
-function extractProductPrice(item) {
-  if (!item) return '';
+function extractProductPrices(item) {
+  let currentPrice = '';
+  let regularPrice = '';
+  let isOnSale = false;
 
-  // 1. Check description / content for exact Amazon price e.g. "Price: $39.99"
-  const allText = [
-    item.short_description || '',
-    item.description || '',
-    item.excerpt?.rendered || '',
-    item.content?.rendered || ''
-  ].join(' ');
+  function formatRaw(val, pricesObj) {
+    if (!val || val === '0' || val === '000') return '';
+    const decimals = pricesObj?.currency_minor_unit !== undefined ? pricesObj.currency_minor_unit : 2;
+    const prefix = pricesObj?.currency_prefix || pricesObj?.currency_symbol || '$';
+    const suffix = pricesObj?.currency_suffix || '';
+    if (typeof val === 'string' && val.includes('.')) {
+      return prefix + parseFloat(val).toFixed(decimals) + suffix;
+    }
+    const num = parseInt(val, 10);
+    if (!isNaN(num) && num > 0) {
+      return prefix + (num / Math.pow(10, decimals)).toFixed(decimals) + suffix;
+    }
+    return '';
+  }
 
-  if (allText) {
-    const decoded = decodeHtmlEntities(allText)
-      .replace(/&#036;/g, '$')
-      .replace(/&#36;/g, '$')
-      .replace(/&pound;/g, '£')
-      .replace(/&euro;/g, '€');
+  // 1. From item.prices (WooCommerce Store API) - Most authoritative for live & on-sale pricing!
+  if (item?.prices) {
+    const rawFinal = item.prices.price || item.prices.sale_price;
+    const rawReg = item.prices.regular_price;
     
-    const pricePattern = /Price:\s*(?:<[^>]*>)*\s*([$£€]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)/i;
-    const match = decoded.match(pricePattern);
-    if (match && match[1]) {
-      let val = match[1].trim();
-      if (!val.startsWith('$') && !val.startsWith('£') && !val.startsWith('€')) {
-        val = '$' + val;
-      }
-      return val;
+    currentPrice = formatRaw(rawFinal, item.prices);
+    const formattedReg = formatRaw(rawReg, item.prices);
+
+    if (formattedReg && currentPrice && formattedReg !== currentPrice) {
+      regularPrice = formattedReg;
+      isOnSale = true;
     }
   }
 
-  // 2. Check item.prices object (WooCommerce Store API)
-  if (item.prices) {
-    const rawPrice = item.prices.price || item.prices.sale_price || item.prices.regular_price;
-    if (rawPrice && rawPrice !== '0' && rawPrice !== '000') {
-      const decimals = item.prices.currency_minor_unit !== undefined ? item.prices.currency_minor_unit : 2;
-      const prefix = item.prices.currency_prefix || item.prices.currency_symbol || '$';
-      const suffix = item.prices.currency_suffix || '';
+  // 2. From price_html
+  if (!currentPrice && item?.price_html && typeof item.price_html === 'string') {
+    const cleanHtml = decodeHtmlEntities(item.price_html)
+      .replace(/&#036;/g, '$').replace(/&#36;/g, '$').replace(/&pound;/g, '£').replace(/&euro;/g, '€');
+    
+    const insMatch = cleanHtml.match(/<ins[^>]*>[\s\S]*?([$£€]\s*[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)[\s\S]*?<\/ins>/i);
+    const delMatch = cleanHtml.match(/<del[^>]*>[\s\S]*?([$£€]\s*[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)[\s\S]*?<\/del>/i);
+    
+    if (insMatch && insMatch[1]) {
+      currentPrice = insMatch[1].replace(/\s+/g, '');
+      if (delMatch && delMatch[1]) {
+        regularPrice = delMatch[1].replace(/\s+/g, '');
+        isOnSale = true;
+      }
+    } else {
+      const match = cleanHtml.match(/([$£€]\s*[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)/);
+      if (match && match[1]) currentPrice = match[1].replace(/\s+/g, '');
+    }
+  }
+
+  // 3. From description / content (e.g. WP REST API fallback)
+  if (!currentPrice) {
+    const allText = [
+      item?.short_description || '',
+      item?.description || '',
+      item?.excerpt?.rendered || '',
+      item?.content?.rendered || ''
+    ].join(' ');
+
+    if (allText) {
+      const decoded = decodeHtmlEntities(allText)
+        .replace(/&#036;/g, '$').replace(/&#36;/g, '$').replace(/&pound;/g, '£').replace(/&euro;/g, '€');
       
-      if (typeof rawPrice === 'string' && rawPrice.includes('.')) {
-        return prefix + parseFloat(rawPrice).toFixed(decimals) + suffix;
-      } else {
-        const num = parseInt(rawPrice, 10);
-        if (!isNaN(num) && num > 0) {
-          const val = (num / Math.pow(10, decimals)).toFixed(decimals);
-          return prefix + val + suffix;
+      const priceSectionMatch = decoded.match(/Price:\s*(?:<span[^>]*>)?([\s\S]*?)(?:<\/span>|<br|\n|$)/i);
+      if (priceSectionMatch && priceSectionMatch[1]) {
+        const section = priceSectionMatch[1];
+        const delM = section.match(/<del[^>]*>[\s\S]*?([$£€]?[0-9.,]+)[\s\S]*?<\/del>/i);
+        const insM = section.match(/<ins[^>]*>[\s\S]*?([$£€]?[0-9.,]+)[\s\S]*?<\/ins>/i);
+        
+        if (delM && delM[1]) {
+          regularPrice = delM[1].trim();
+          if (!regularPrice.startsWith('$') && !regularPrice.startsWith('£') && !regularPrice.startsWith('€')) regularPrice = '$' + regularPrice;
+          
+          if (insM && insM[1]) {
+            currentPrice = insM[1].trim();
+          } else {
+            const afterDel = section.replace(/<del[\s\S]*?<\/del>/gi, '');
+            const m = afterDel.match(/([$£€]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)/);
+            if (m && m[1]) currentPrice = m[1].trim();
+          }
+          if (currentPrice && !currentPrice.startsWith('$') && !currentPrice.startsWith('£') && !currentPrice.startsWith('€')) currentPrice = '$' + currentPrice;
+          if (currentPrice) isOnSale = true;
+        } else {
+          const m = section.match(/([$£€]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)/);
+          if (m && m[1]) {
+            currentPrice = m[1].trim();
+            if (!currentPrice.startsWith('$') && !currentPrice.startsWith('£') && !currentPrice.startsWith('€')) currentPrice = '$' + currentPrice;
+          }
         }
       }
     }
   }
 
-  // 3. Check item.price_html
-  if (item.price_html && typeof item.price_html === 'string') {
-    const cleanHtml = decodeHtmlEntities(item.price_html)
-      .replace(/&#036;/g, '$')
-      .replace(/&#36;/g, '$')
-      .replace(/&pound;/g, '£')
-      .replace(/&euro;/g, '€');
-    const match = cleanHtml.match(/([$£€]\s*[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)/);
-    if (match && match[1]) {
-      return match[1].replace(/\s+/g, '');
-    }
-  }
+  return {
+    price: currentPrice,
+    regularPrice: regularPrice,
+    onSale: isOnSale || Boolean(item?.on_sale)
+  };
+}
 
-  return '';
+function extractProductPrice(item) {
+  return extractProductPrices(item).price;
 }
 
 /**
@@ -316,6 +360,7 @@ window.VoyageurWP = {
   setEndpoint: setWpEndpoint,
   decodeHtmlEntities: decodeHtmlEntities,
   extractProductPrice: extractProductPrice,
+  extractProductPrices: extractProductPrices,
   cleanShortDescription: cleanShortDescription,
   getCachedData: getCachedData,
   setCachedData: setCachedData,
@@ -577,7 +622,7 @@ window.VoyageurWP = {
             const content = item.description || '';
             const excerpt = item.short_description || content;
             
-            const priceFormatted = extractProductPrice(item);
+            const priceInfo = extractProductPrices(item);
             const cats = (item.categories || []).map(c => ({ id: String(c.id), name: decodeHtmlEntities(c.name), slug: c.slug }));
 
             const prodObj = sanitizeProduct({
@@ -587,9 +632,9 @@ window.VoyageurWP = {
               slug: item.slug,
               description: content,
               shortDescription: excerpt,
-              price: priceFormatted,
-              regularPrice: '',
-              onSale: item.on_sale || false,
+              price: priceInfo.price,
+              regularPrice: priceInfo.regularPrice,
+              onSale: priceInfo.onSale,
               sku: item.sku || `GETAWAY-${item.id}`,
               averageRating: parseFloat(item.average_rating) || 4.9,
               reviewCount: parseInt(item.review_count, 10) || (12 + (index * 2)),
@@ -637,7 +682,7 @@ window.VoyageurWP = {
             const title = decodeHtmlEntities(item.title?.rendered || item.slug);
             const content = item.content?.rendered || '';
             const excerpt = item.excerpt?.rendered || content;
-            const priceFormatted = extractProductPrice(item);
+            const priceInfo = extractProductPrices(item);
 
             const terms = item._embedded?.['wp:term'] || [];
             const cats = [];
@@ -656,9 +701,9 @@ window.VoyageurWP = {
               slug: item.slug,
               description: content,
               shortDescription: excerpt,
-              price: priceFormatted,
-              regularPrice: '',
-              onSale: false,
+              price: priceInfo.price,
+              regularPrice: priceInfo.regularPrice,
+              onSale: priceInfo.onSale,
               averageRating: 4.9,
               reviewCount: 15 + (index * 2),
               image: { sourceUrl: media, altText: title },
@@ -742,7 +787,7 @@ window.VoyageurWP = {
           const gallery = (item.images || []).map(img => ({ sourceUrl: img.src }));
           const title = decodeHtmlEntities(item.name || item.slug);
           const cats = (item.categories || []).map(c => ({ id: String(c.id), name: decodeHtmlEntities(c.name), slug: c.slug }));
-          const priceFormatted = extractProductPrice(item);
+          const priceInfo = extractProductPrices(item);
 
           const result = {
             product: sanitizeProduct({
@@ -752,9 +797,9 @@ window.VoyageurWP = {
               slug: item.slug,
               description: item.description || '',
               shortDescription: item.short_description || item.description || '',
-              price: priceFormatted,
-              regularPrice: '',
-              onSale: item.on_sale || false,
+              price: priceInfo.price,
+              regularPrice: priceInfo.regularPrice,
+              onSale: priceInfo.onSale,
               sku: item.sku || `GETAWAY-${item.id}`,
               averageRating: parseFloat(item.average_rating) || 4.9,
               reviewCount: parseInt(item.review_count, 10) || 16,

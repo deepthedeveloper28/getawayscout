@@ -118,8 +118,10 @@
               <span style="color: #f59e0b; font-weight: 700;">★ 4.9</span> (24 Customer Reviews) • SKU: <strong id="prodSku" style="color: var(--color-navy);">VOY-01</strong>
             </div>
 
-            <div id="prodPrice" style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 700; color: var(--color-navy); margin-bottom: 1.5rem;">
-              $299.00
+            <div id="prodPriceWrapper" style="display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+              <span id="prodPrice" style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 700; color: var(--color-navy);"></span>
+              <span id="prodRegularPrice" style="font-size: 1.25rem; color: #94a3b8; text-decoration: line-through; display: none;"></span>
+              <span id="prodSaleBadge" style="background: #ef4444; color: #fff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 9999px; display: none;">SALE</span>
             </div>
 
             <div id="prodShortDesc" style="font-size: 0.9rem; color: var(--color-slate-600); line-height: 1.6; margin-bottom: 1.5rem;">
@@ -323,12 +325,32 @@
       document.getElementById('breadcrumbProdName').innerText = decodedProdName;
       document.getElementById('prodName').innerText = decodedProdName;
       
+      const priceWrapper = document.getElementById('prodPriceWrapper');
+      const priceEl = document.getElementById('prodPrice');
+      const regPriceEl = document.getElementById('prodRegularPrice');
+      const saleBadgeEl = document.getElementById('prodSaleBadge');
+
       if (currentProd.price) {
-        document.getElementById('prodPrice').style.display = 'block';
-        document.getElementById('prodPrice').innerText = currentProd.price;
+        if (priceWrapper) priceWrapper.style.display = 'flex';
+        if (priceEl) priceEl.innerText = currentProd.price;
+        
+        if (currentProd.regularPrice && currentProd.regularPrice !== currentProd.price) {
+          if (regPriceEl) {
+            regPriceEl.style.display = 'inline';
+            regPriceEl.innerText = currentProd.regularPrice;
+          }
+          if (saleBadgeEl) {
+            saleBadgeEl.style.display = 'inline-block';
+          }
+        } else {
+          if (regPriceEl) regPriceEl.style.display = 'none';
+          if (saleBadgeEl) saleBadgeEl.style.display = 'none';
+        }
       } else {
-        document.getElementById('prodPrice').style.display = 'none';
-        document.getElementById('prodPrice').innerText = '';
+        if (priceWrapper) priceWrapper.style.display = 'none';
+        if (priceEl) priceEl.innerText = '';
+        if (regPriceEl) regPriceEl.style.display = 'none';
+        if (saleBadgeEl) saleBadgeEl.style.display = 'none';
       }
 
       const shortClean = typeof cleanShortDescription === 'function' 

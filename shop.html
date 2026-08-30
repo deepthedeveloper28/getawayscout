@@ -529,9 +529,12 @@
           </div>
 
           <div style="padding: 0.75rem 1rem; border-top: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--color-navy);">
-              ${p.price ? p.price : ''}
-            </span>
+            <div>
+              <span style="font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--color-navy);">
+                ${p.price ? p.price : ''}
+              </span>
+              ${p.regularPrice && p.regularPrice !== p.price ? `<span style="font-size: 0.75rem; color: #94a3b8; text-decoration: line-through; margin-left: 0.35rem;">${p.regularPrice}</span>` : ''}
+            </div>
             <a href="product-single.html?slug=${p.slug}" class="btn-primary-action" style="padding: 0.35rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700;">
               Details &rarr;
             </a>
@@ -633,8 +636,9 @@
         }
 
         if (!prodsList) {
-          ['voy_fast_v4_products_all_', 'voy_fast_v3_products_all_'].forEach(k => {
+          ['voy_fast_v5_', 'voy_fast_v4_', 'voy_fast_v3_'].forEach(prefix => {
             if (prodsList) return;
+            const k = prefix + 'products_all_';
             const raw = localStorage.getItem(k) || sessionStorage.getItem(k);
             if (raw) {
               try {
